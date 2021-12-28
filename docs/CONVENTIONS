@@ -1,0 +1,37 @@
+If modifying or extending this library, please stick to these conventions:
+
+* Source code is normally formatted for 80 column width terminals (old
+  school, I know).
+
+* Two space indents.  Open/close brace on their own indented lines.
+
+* Function names are CapitalizedSentences( with arguments );
+
+* Variable names start in lowercase and each subsequent word starts with
+  a capital.
+
+* Return values are 0 for success, negative for errors and positive for
+  something else.
+
+* Do use the Warning(), Notice() and Error() functions to indicate when
+  things progress or go wrong.
+
+Pulling all this together into an example:
+
+---------------------------------------------------------------------------
+int MyFunctionThatDoesSomething( int firstArgument, int* returnValue)
+  {
+  if( firstArgument<0 )
+    {
+    /* return an error condition, but do not abort the program */
+    Warning( "I wasn't expecting that!" );
+    return -1;
+    }
+
+  returnValue = firstArgument * firstArgument;
+
+  /* success */
+  return 0;
+  }
+---------------------------------------------------------------------------
+

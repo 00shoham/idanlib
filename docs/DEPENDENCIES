@@ -1,0 +1,10 @@
+For convenience, some code from other people has been included in this library:
+
+* sha256.c and .h from Brad Conte (brad AT bradconte.com)
+
+* nargv.c and .h from Triston J. Taylor (pc.wiz.tt@gmail.com)
+
+These files are licensed as per their authors and not necessarily subject to
+the license of this project as a whole.
+
+Thank you!
