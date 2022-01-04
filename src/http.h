@@ -13,6 +13,26 @@
 enum httpMethod { HTTP_INVALID, HTTP_GET, HTTP_POST };
 enum state { ST_TEXT, ST_GOTCR, ST_GOTNL };
 
+typedef struct _cgi_header
+  {
+  char* separatorString;
+  _TAG_VALUE* files;
+  _TAG_VALUE* headers;
+  } _CGI_HEADER;
+
+enum postState
+  {
+  ps_FIRSTHEADER,
+  ps_SEPARATOR,
+  ps_HEADERLINE,
+  ps_VARIABLE,
+  ps_DATA
+  };
+
+int ParsePostData( FILE* stream,
+                   _CGI_HEADER *header,
+                   int (*funcPtr)( _CGI_HEADER* ) );
+
 /* did a bit of UI call get called via a UI or API? */
 enum callMethod { cm_invalid, cm_ui, cm_api };
 

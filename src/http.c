@@ -646,11 +646,6 @@ _TAG_VALUE* ParseQueryString( _TAG_VALUE* list, char* string )
     }
   }
 
-/* examples of headers we have to parse:
- * Content-Disposition: form-data; name="filename"; filename="auto-cert.txt"
- * Content-Type: text/plain
- */
-
 int gotHeader = 0;
 void CGIHeader( char* contentType,
                 long contentLength,
@@ -778,6 +773,11 @@ _TAG_VALUE* ParseHeaderSubVariables( _TAG_VALUE* list, char* buf )
 
   return myList;
   }
+
+/* examples of headers we have to parse:
+ * Content-Disposition: form-data; name="filename"; filename="auto-cert.txt"
+ * Content-Type: text/plain
+ */
 
 /* ParseHeaderLine()
  * Parses a string which represents a CGI POST header line such as above.
@@ -975,3 +975,296 @@ int StringMatchesUserIDFormat( char* userID )
   return 0;
   }
 
+#ifdef DEBUG
+/* myfgets()
+ * wrapper to fgets used for debugging.  do not use in production code.
+ */
+char* myfgets( char* buf, int buflen, FILE* f )
+  {
+  char* s = fgets( buf, buflen, f );
+  if( s==NULL )
+    {
+    /* Notice("fgets returned NULL"); */
+    }
+  else
+    {
+    if( debugOutput!=NULL )
+      {
+      fputs( buf, debugOutput );
+      }
+    }
+
+  return s;
+  }
+
+/* myfgetc()
+ * wrapper to fgetc used for debugging.  do not use in production code.
+ */
+int myfgetc( FILE* f )
+  {
+  int c = fgetc( f );
+  if( debugOutput!=NULL )
+    {
+    fputc( c, debugOutput );
+    }
+
+  return c;
+  }
+
+size_t myfread( void *ptr, size_t size, size_t nmemb, FILE *stream)
+  {
+  size_t n = fread( ptr, size, nmemb, stream );
+  if( n>0 && debugOutput!=NULL )
+    {
+    (void)fwrite( ptr, size, n, debugOutput );
+    }
+  /* LogMessage("fread() --> %d items", n); */
+
+  return n;
+  }
+
+#else
+  #define myfgets fgets
+  #define myfgetc fgetc
+  #define myfread fread
+#endif
+
+/* CopySingleVariable()
+ * Move a _TAG_VALUE list, which represents the current CGI header variable
+ * (which could be multiple lines, with sub-arguments), into the headers
+ * list of a _CGI_HEADER struct.
+ * Recommended to set the pointer to NULL after calling this.
+ */
+void CopySingleVariable( _CGI_HEADER* header, _TAG_VALUE* workingHeaders )
+  {
+  if( workingHeaders==NULL )
+    return;
+
+  char* tag = NULL;
+  char* value = NULL;
+
+  for( _TAG_VALUE* ptr=workingHeaders; ptr!=NULL; ptr=ptr->next )
+    {
+    if( ptr->tag!=NULL && *ptr->tag!=0 && strcmp(ptr->tag,"value")==0
+        && ptr->value!=NULL && *ptr->value!=0 )
+      {
+      value = ptr->value;
+      }
+    }
+
+  for( _TAG_VALUE* ptr=workingHeaders; ptr!=NULL; ptr=ptr->next )
+    {
+    if( ptr->tag!=NULL && *ptr->tag!=0 && strcmp(ptr->tag,"Content-Disposition")==0
+        && ptr->value!=NULL && *ptr->value!=0 && strcmp(ptr->value,"form-data")==0 )
+      {
+      for( _TAG_VALUE* sptr=ptr->subHeaders; sptr!=NULL; sptr=sptr->next )
+        {
+        if( sptr->tag!=NULL && *sptr->tag!=0 && strcmp(sptr->tag,"name")==0
+            && sptr->value!=NULL && *sptr->value!=0 )
+          {
+          tag = sptr->value;
+          }
+        }
+      }
+    }
+
+  if( tag!=NULL && value!=NULL )
+    {
+    header->headers = NewTagValue( tag, value, header->headers, 0 );
+    }
+  }
+
+/* ParsePostData()
+ * Read stdin from a CGI POST and (a) populate a data structure with
+ * form variables.  What we read is dropped into a _CGI_HEADER
+ * struct whose address is passed in as an argument.
+ * Don't forget to free the linked lists in there when done.
+ */
+int ParsePostData( FILE* stream,
+                   _CGI_HEADER *header,
+                   int (*funcPtr)( _CGI_HEADER * ) )
+  {
+#ifdef DEBUG
+  debugOutput = logFileHandle;
+  if( debugOutput!=NULL )
+    {
+    fprintf( debugOutput, "----start----\n");
+    fflush( debugOutput );
+    }
+#endif
+
+  enum postState state = ps_FIRSTHEADER;
+
+  header->separatorString = NULL;
+  header->files = NULL;
+  header->headers = NULL;
+
+  _TAG_VALUE* workingHeaders = NULL;
+
+  while( !feof( stream ) )
+    {
+    /* shared among different states */
+    char buf[BUFLEN];
+
+    if( state==ps_FIRSTHEADER )
+      {
+      /* LogMessage("ps_FIRSTHEADER"); */
+      if( myfgets(buf, BUFLEN, stream)!=buf )
+        {
+        /* this is normal if nothing was posted.. */
+        /* Warning("Failed to load line of text from CGI stream (1)\n"); */
+        return -1;
+        }
+      header->separatorString = strdup( StripEOL( buf ));
+
+      if( *(header->separatorString) != '='
+          && *(header->separatorString) != '-'
+          && strstr( header->separatorString, "=" ) != NULL )
+        {
+#ifdef DEBUG
+        Notice( "Perhaps we have var=value assignment in [%s]?",
+                header->separatorString );
+        Notice( "header->headers is initially %p", header->headers  );
+#endif
+        header->headers = ParseQueryString( header->headers , header->separatorString );
+#ifdef DEBUG
+        Notice( "header->headers is now %p", header->headers  );
+#endif
+        }
+      else
+        {
+        state=ps_HEADERLINE;
+        }
+      }
+
+    else if( state==ps_HEADERLINE )
+      {
+      /* LogMessage("ps_HEADERLINE"); */
+      if( myfgets(buf, BUFLEN, stream)!=buf )
+        {
+        if( ! feof( stream ) )
+          {
+          Warning("Failed to load line of text from CGI stream (2)\n");
+          }
+        break;
+        }
+
+      if( buf[0]==CR && buf[1]==LF && buf[2]==0 )
+        {
+        /* next line is contents or start of data */
+        if( HeadersContainTagAndSubTag( workingHeaders, "Content-Disposition", "filename" ) )
+          { /* data stream */
+          state = ps_DATA;
+          }
+        else
+          { /* variable value */
+          state = ps_VARIABLE;
+          }
+        }
+      else
+        {
+        if( buf[0]>='A' && buf[0]<='Z' )
+          {
+          workingHeaders = ParseHeaderLine( workingHeaders, buf );
+          }
+        else
+          {
+          if( buf[0]=='-' && buf[1]=='-' && buf[2]=='\r' && buf[3]=='\n' )
+            {
+            /* end of MIME segments */
+            break;
+            }
+          else
+            {
+            CGIHeader( NULL, 0, NULL, 0, NULL, 0, NULL);
+            Error("Header line should start with [A-Z]: [%s]", buf );
+            }
+          }
+        }
+      }
+
+    else if( state==ps_VARIABLE )
+      {
+      /* LogMessage("ps_VARIABLE"); */
+      if( myfgets(buf, BUFLEN, stream)!=buf )
+        {
+        CGIHeader( NULL, 0, NULL, 0, NULL, 0, NULL);
+        Error("Failed to load line of text from CGI stream (2)\n");
+        }
+
+      workingHeaders = ParseValue( buf, workingHeaders );
+      /* printf("WorkingHeaders:\n"); */
+      /* PrintTagValue("", workingHeaders); */
+      CopySingleVariable( header, workingHeaders );
+      FreeTagValue( workingHeaders );
+      workingHeaders = NULL;
+
+      state = ps_SEPARATOR;
+      }
+
+    else if( state==ps_DATA )
+      {
+      CGIHeader( NULL, 0, NULL, 0, NULL, 0, NULL);
+      Error("Uploading files not supported by this CGI.");
+      }
+
+    else if( state==ps_SEPARATOR )
+      {
+      /* LogMessage("ps_SEPARATOR"); */
+
+      if( EMPTY( header->separatorString ) )
+        {
+        CGIHeader( NULL, 0, NULL, 0, NULL, 0, NULL);
+        Error("Parse error: no defined separator");
+        }
+
+      if( myfgets(buf, BUFLEN, stream)!=buf )
+        {
+        CGIHeader( NULL, 0, NULL, 0, NULL, 0, NULL);
+        Error("Failed to load line of text from CGI stream (5)\n");
+        }
+
+      if( strncmp( buf, header->separatorString, strlen(header->separatorString ) )==0 )
+        {
+        FreeTagValue( workingHeaders );
+        workingHeaders = NULL;
+        state=ps_HEADERLINE;
+        }
+      else
+        {
+        /* perhaps we have a multi-line form input (<textarea>)? */
+        if( header!=NULL && header->headers!=NULL && header->headers->value!=NULL )
+          {
+          /*
+          Notice( "Appending it to: [%s] (old value = [%s])",
+                  NULLPROTECT( header->headers->tag ),
+                  NULLPROTECT( header->headers->value ) );
+          */
+          char** v = &(header->headers->value);
+
+          int l = strlen( *v ) + strlen( buf ) + 5;
+          char* tmp = calloc( l, sizeof( char ) );
+          strcpy( tmp, *v );
+          if( strchr( tmp, '\r' )==0 )
+            {
+            strcat( tmp, "\n" );
+            }
+          strcat( tmp, buf );
+          free( *v );
+          *v = tmp;
+          }
+        else
+          { /* or not? */
+          Warning("Parse problem: expected separator but got [%s]", buf );
+          workingHeaders = AppendValue( buf, workingHeaders );
+          }
+        }
+      }
+    }
+
+#ifdef DEBUG
+  Notice("Broke out of ParsePost - separatorString=%s", NULLPROTECT( header->separatorString) );
+#endif
+
+  return 0;
+  }

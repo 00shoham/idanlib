@@ -38,6 +38,15 @@
 #define RE_POSINT "[0-9]+"
 #define RE_INTEGER "[-]?[0-9]+"
 #define RE_FLOAT "[0-9.]+"
+#define RE_IDENTIFIER "[0-9a-zA-Z_.-]+"
+
+#define RE_DATE "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"
+#define RE_TIME "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]"
+#define RE_TIME_NOSEC "[0-9][0-9]:[0-9][0-9]"
+
+#define RE_EMAIL_ADDRESS "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
+#define RE_EMAIL_DOMAIN "[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
+
 
 #include "error.h"
 #include "mem-utils.h"

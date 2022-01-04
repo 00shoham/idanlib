@@ -6,5 +6,8 @@ void APIError( char* methodName, int errorCode, char* fmt, ... );
 void Warning( char* fmt, ... );
 void Notice( char* fmt, ... );
 
-#endif
+extern int useMutexInErrorReporting;
+extern FILE* logFileHandle;
+extern char* parsingLocation;
 
+#endif

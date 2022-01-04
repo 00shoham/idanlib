@@ -17,6 +17,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
 int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxtimeSeconds );
 int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSize, int timeoutSeconds, int maxtimeSeconds );
 int AsyncRunCommandNoIO( char* cmd );
+int SyncRunCommandNoIO( char* cmd );
 void SignalHandler( int signo );
 void KillExistingCommandInstances( char* commandLine );
 

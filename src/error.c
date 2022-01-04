@@ -1,32 +1,78 @@
 #include "utils.h"
 
+pthread_mutex_t errLock = PTHREAD_MUTEX_INITIALIZER;
+int useMutexInErrorReporting = 0;
+FILE* logFileHandle = NULL;
+char* parsingLocation = NULL;
+
+#define LOCK_MUTEX\
+  if( useMutexInErrorReporting )\
+    {\
+    pthread_mutex_lock( &errLock );\
+    }
+
+#define UNLOCK_MUTEX\
+  if( useMutexInErrorReporting )\
+    {\
+    pthread_mutex_unlock( &errLock );\
+    }
+
 void mysyslog( int level, char* prefix, char* msg )
   {
+  time_t tnow = time(NULL);
+  struct tm *tmp = localtime( &tnow );
+  char longtime[BUFLEN];
+  snprintf( longtime, sizeof(longtime)-1,
+            "%04d-%02d-%02d %02d:%02d:%02d %s ",
+            tmp->tm_year + 1900,
+            tmp->tm_mon + 1,
+            tmp->tm_mday,
+            tmp->tm_hour,
+            tmp->tm_min,
+            tmp->tm_sec,
+            prefix );
+
   if( inDaemon || inCGI )
     {
     if( prefix!=NULL && strcmp(prefix,"NOTICE")==0 ) level = LOG_NOTICE;
     else if( prefix!=NULL && strcmp(prefix,"WARNING")==0 ) level = LOG_WARNING;
     else if( prefix!=NULL && strcmp(prefix,"ERROR")==0 ) level = LOG_ERR;
-    syslog( level, "%s", msg );
+
+    if( logFileHandle!=NULL )
+      {
+      LOCK_MUTEX
+      fputs( longtime, logFileHandle );
+      if( NOTEMPTY( parsingLocation ) )
+        fputs( parsingLocation, logFileHandle );
+      fputs( msg, logFileHandle );
+      fputs( "\n", logFileHandle );
+      fflush( logFileHandle );
+      UNLOCK_MUTEX
+      }
+    else
+      {
+      if( NOTEMPTY( parsingLocation ) )
+        {
+        char buf[BUFLEN];
+        snprintf(buf,sizeof(buf)-1,"%s %s", parsingLocation, msg );
+        syslog( level, "%s", msg );
+        }
+      else
+        {
+        syslog( level, "%s", msg );
+        }
+      }
     }
   else
     {
-    time_t tnow = time(NULL);
-    struct tm *tmp = localtime( &tnow );
-    char longtime[BUFLEN];
-    snprintf( longtime, sizeof(longtime)-1,
-              "%04d-%02d-%02d %02d:%02d:%02d %s ",
-              tmp->tm_year + 1900,
-              tmp->tm_mon + 1,
-              tmp->tm_mday,
-              tmp->tm_hour,
-              tmp->tm_min,
-              tmp->tm_sec,
-              prefix );
+    LOCK_MUTEX
     fputs( longtime, stdout );
+    if( NOTEMPTY( parsingLocation ) )
+      fputs( parsingLocation, stdout );
     fputs( msg, stdout );
     fputs( "\n", stdout );
     fflush( stdout );
+    UNLOCK_MUTEX
     }
   }
 
@@ -60,10 +106,6 @@ void APIError( char* methodName, int errorCode, char* fmt, ... )
   char errmsg[BUFLEN];
   char* ptr = errmsg;
   char* end = errmsg+sizeof(errmsg)-1;
-  /*
-  snprintf( ptr, end-ptr, "Error in API call.  " );
-  ptr += strlen(ptr );
-  */
 
   va_start( arglist, fmt );
   vsnprintf( ptr, end-ptr, fmt, arglist );
@@ -109,3 +151,4 @@ void Notice( char* fmt, ... )
   mysyslog( LOG_USER|LOG_NOTICE, "NOTICE", buf );
   return;
   }
+
