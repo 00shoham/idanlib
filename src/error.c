@@ -1,5 +1,6 @@
 #include "utils.h"
 
+/* globs mentioned in error.h */
 pthread_mutex_t errLock = PTHREAD_MUTEX_INITIALIZER;
 int useMutexInErrorReporting = 0;
 FILE* logFileHandle = NULL;
