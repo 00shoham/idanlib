@@ -656,14 +656,16 @@ int SyncRunCommandNoIO( char* cmd )
     close( 0 );
     close( 1 );
     close( 2 );
-    (void)execv( args->argv[0], args->argv );
+    if( execv( args->argv[0], args->argv ) )
+      Error( "Tried to exec [%s] - got error %d:%s",
+             args->argv[0], errno, strerror(errno) );
     /* end of code */
     }
 
   nargv_free( args );
 
   int retVal = 0;
-  int wStatus;
+  int wStatus = 0;
   if( waitpid( pid, &wStatus, 0 )==-1 )
     {
     Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
