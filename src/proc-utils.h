@@ -18,6 +18,9 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
 int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSize, int timeoutSeconds, int maxtimeSeconds );
 int AsyncRunCommandNoIO( char* cmd );
 int SyncRunCommandNoIO( char* cmd );
+int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin );
+int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName );
+int SyncRunShellNoIO( char* cmd );
 void SignalHandler( int signo );
 void KillExistingCommandInstances( char* commandLine );
 
