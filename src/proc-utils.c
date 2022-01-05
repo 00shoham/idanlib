@@ -678,6 +678,225 @@ int SyncRunCommandNoIO( char* cmd )
   return retVal;
   }
 
+int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
+  {
+  if( EMPTY( cmd ) 
+      || EMPTY( fileNameStdin )
+      || FileExists( fileNameStdin )!=0 )
+    return -1;
+
+  NARGV* args = nargv_parse( cmd );
+  if( args==NULL )
+    Error( "Failed to parse cmd line [%s]", cmd );
+
+  int fd[2];
+  int readFD = -1;
+  int writeFD = -1;
+  int err = pipe( fd );
+  if( err<0 )
+    Error( "Failed to pipe() - %d:%s", errno, strerror( errno ) );
+  readFD = fd[0];
+  writeFD = fd[1];
+
+  pid_t pid = fork();
+  if( pid<0 )
+    Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
+
+  if( pid == 0 ) /* child */
+    {
+    close( 0 );
+    dup2( readFD, 0 );
+    close( writeFD );
+    close( 1 );
+    close( 2 );
+    (void)execv( args->argv[0], args->argv );
+    /* end of code */
+    }
+
+  nargv_free( args );
+
+  close( readFD ); /* used in child only */
+
+  int readStream = open( fileNameStdin, O_RDONLY );
+  if( readStream<0 )
+    Warning( "Cannot open file %s to stream to command", fileNameStdin );
+  else
+    {
+    char buf[BUFLEN];
+    size_t nBytes = -1;
+    do
+      {
+      nBytes = read( readStream, buf, sizeof(buf)-1 );
+      if( nBytes>0 )
+        {
+        size_t nWritten = write( writeFD, buf, nBytes );
+        if( nWritten!=nBytes )
+          {
+          Warning( "Tried to write %d bytes but only managed %d",
+                   (int)nBytes, (int)nWritten );
+          break;
+          }
+        }
+      } while( nBytes>0 );
+
+    close( readStream );
+    }
+  close( writeFD ); /* tell child we are done */
+
+  int retVal = 0;
+  int wStatus;
+  if( waitpid( pid, &wStatus, 0 )==-1 )
+    {
+    Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
+    retVal = -1;
+    }
+
+  if( WIFEXITED( wStatus ) )
+    {
+    Notice( "child exited.\n");
+    }
+
+  return retVal;
+  }
+
+int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
+  {
+  if( EMPTY( cmd ) 
+      || EMPTY( listFileName )
+      || FileExists( listFileName )!=0 )
+    return -1;
+
+  NARGV* args = nargv_parse( cmd );
+  if( args==NULL )
+    Error( "Failed to parse cmd line [%s]", cmd );
+
+  int fd[2];
+  int readFD = -1;
+  int writeFD = -1;
+  int err = pipe( fd );
+  if( err<0 )
+    Error( "Failed to pipe() - %d:%s", errno, strerror( errno ) );
+  readFD = fd[0];
+  writeFD = fd[1];
+
+  pid_t pid = fork();
+  if( pid<0 )
+    Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
+
+  if( pid == 0 ) /* child */
+    {
+    close( 0 );
+    dup2( readFD, 0 );
+    close( writeFD );
+    close( 1 );
+    close( 2 );
+    (void)execv( args->argv[0], args->argv );
+    /* end of code */
+    }
+
+  nargv_free( args );
+
+  close( readFD );
+
+  FILE* listF = fopen( listFileName, "r" );
+  if( listF==NULL )
+    {
+    Warning( "Failed to open %s (list of files to read into cmd) - %d:%s",
+             listFileName, errno, strerror( errno ) );
+    }
+  else
+    {
+    char fileName[BUFLEN];
+    while( fgets( fileName, sizeof(fileName)-1, listF )==fileName )
+      {
+      StripEOL( fileName );
+
+      int readStream = open( fileName, O_RDONLY );
+      if( readStream<0 )
+        Warning( "Cannot open file %s to stream to command", fileName );
+      else
+        {
+        char buf[BUFLEN];
+        size_t nBytes = -1;
+        do
+          {
+          nBytes = read( readStream, buf, sizeof(buf)-1 );
+          if( nBytes>0 )
+            {
+            size_t nWritten = write( writeFD, buf, nBytes );
+            if( nWritten!=nBytes )
+              {
+              Warning( "Tried to write %d bytes but only managed %d",
+                       (int)nBytes, (int)nWritten );
+              break;
+              }
+            }
+          } while( nBytes>0 );
+
+        close( readStream );
+        }
+      }
+
+    fclose( listF );
+    }
+  close( writeFD );
+
+  int retVal = 0;
+  int wStatus;
+  if( waitpid( pid, &wStatus, 0 )==-1 )
+    {
+    Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
+    retVal = -1;
+    }
+
+  if( WIFEXITED( wStatus ) )
+    {
+    Notice( "child exited.\n");
+    }
+
+  return retVal;
+  }
+
+int SyncRunShellNoIO( char* cmd )
+  {
+  if( EMPTY( cmd ) )
+    return -1;
+
+  pid_t pid = fork();
+  if( pid<0 )
+    Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
+
+  if( pid == 0 ) /* child */
+    {
+    /*
+    close( 0 );
+    close( 1 );
+    close( 2 );
+    */
+    Notice( "Forked.  About to exec [%s] in a shell", cmd );
+    execl( "/bin/sh", "sh", "-c", cmd, (char*)NULL );
+    /* should not reach this - so it's an error */
+    Error( "Failed to run /bin/sh sh -c \"%s\" - %d:%s",
+           cmd, errno, strerror( errno ) );
+    /* end of code */
+    }
+
+  int retVal = 0;
+  int wStatus;
+  if( waitpid( pid, &wStatus, 0 )==-1 )
+    {
+    Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
+    retVal = -1;
+    }
+
+  if( WIFEXITED( wStatus ) )
+    {
+    Notice( "child exited.\n");
+    }
+
+  return retVal;
+  }
+
 void SignalHandler( int signo )
   {
   if( signo == SIGHUP )
