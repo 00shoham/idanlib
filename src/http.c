@@ -916,6 +916,34 @@ void DownloadFile( long filesize, char* path, char* fileName )
     }
   }
 
+void DownloadChunkedStream( int fd, char* fileName )
+  {
+  printf( "Content-Type: application/octet-stream\r\n");
+  printf( "Content-Disposition: attachment; filename=\"%s\"\r\n",
+          fileName==NULL ? "no-name-file" : fileName );
+
+  printf( "Transfer-Encoding: chunked\r\n" );
+  printf( "X-Pad: avoid browser bug\r\n");
+  printf( "\r\n" );
+
+  char buf[BUFLEN];
+  size_t n = 0;
+  unsigned long total = 0;
+  while( (n=read( fd, buf, sizeof(buf)-1))>0 )
+    {
+    printf( "%lx\r\n", (long)n );
+    int m = fwrite( buf, sizeof(char), n, stdout );
+    if( m!=n )
+      {
+      Warning("Failed to write file @ %'lu", total);
+      break;
+      }
+    (void)fwrite( "\r\n", sizeof(char), 2, stdout );
+    total += m;
+    }
+  (void)fwrite( "0\r\n\r\n", sizeof(char), 5, stdout );
+  }
+
 char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
   {
   char* userVar = DEFAULT_USER_ENV_VAR;

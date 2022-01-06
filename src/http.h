@@ -70,6 +70,7 @@ _TAG_VALUE* HeadersContainTag( _TAG_VALUE* list, char* tag );
 int HeadersContainTagAndSubTag( _TAG_VALUE* list, char* tag, char* subTag );
 _TAG_VALUE* ParseValue( char* buf, _TAG_VALUE* workingHeaders );
 void DownloadFile( long filesize, char* path, char* fileName );
+void DownloadChunkedStream( int fd, char* fileName );
 
 char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName );
 
