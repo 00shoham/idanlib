@@ -5,10 +5,12 @@ enum valueType GuessType( char* str )
   if( EMPTY( str ) )
     return VT_INVALID;
 
-  if( AllDigits( str ) )
+  if( ( (*str)=='-' && AllDigits( str+1 ) )
+      || AllDigits( str ) )
     return VT_INT;
 
-  if( AllDigitsSingleDot( str ) )
+  if( ( (*str)=='-' && AllDigitsSingleDot( str+1 ) )
+      || AllDigitsSingleDot( str ) )
     return VT_DOUBLE;
 
   return VT_STR;
