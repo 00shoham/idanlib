@@ -20,7 +20,7 @@ typedef struct _tag_value
 enum valueType GuessType( char* str );
 char* TypeName( enum valueType t );
 
-_TAG_VALUE* NewTagValue( char* tag, char* value, _TAG_VALUE* list, int replaceDup );
+_TAG_VALUE* NewTagValue( char* tag, const char* value, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* AppendValue( char* buf, _TAG_VALUE* workingHeaders );
 _TAG_VALUE* NewTagValueInt( char* tag, int value, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* NewTagValueDouble( char* tag, double value, _TAG_VALUE* list, int replaceDup );

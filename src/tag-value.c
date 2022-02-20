@@ -33,7 +33,7 @@ char* TypeName( enum valueType t )
  * list as well (tag/value/sub-list).
  * Memory management: Don't forget to clean up with FreeTagValue when done.
  */
-_TAG_VALUE* NewTagValue( char* tag, char* value, _TAG_VALUE* list, int replaceDup )
+_TAG_VALUE* NewTagValue( char* tag, const char* value, _TAG_VALUE* list, int replaceDup )
   {
   if( replaceDup )
     {

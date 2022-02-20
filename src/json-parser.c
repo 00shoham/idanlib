@@ -158,7 +158,7 @@ void ParseWarning( enum parser_state state, int c, int cNum, char* ptr )
            c, cNum, ParseStateName( state ), smallbuf );
   }
 
-_TAG_VALUE* ParseJSON( char* string )
+_TAG_VALUE* ParseJSON( const char* string )
   {
   enum parser_state state = PS_PRE_OPENBR;
   _TAG_VALUE* list = NULL;
@@ -455,7 +455,7 @@ _TAG_VALUE* ParseJSON( char* string )
   }
 
 /* 0 == same */
-int CompareJSON( char* jsonA, char* jsonB,
+int CompareJSON( const char* jsonA, const char* jsonB,
                  _TAG_VALUE* tagsToDelete )
   {
   _TAG_VALUE* tvA = ParseJSON( jsonA );
@@ -596,7 +596,7 @@ int ListToJSON( _TAG_VALUE* list, char* buf, int bufLen )
   return 0;
   }
 
-int NestedListToJSON( char* arrayName, _TAG_VALUE* list, char* buf, int bufLen )
+int NestedListToJSON( const char* arrayName, _TAG_VALUE* list, char* buf, int bufLen )
   {
   if( buf==NULL || bufLen<10 )
     {
