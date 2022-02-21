@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <execinfo.h>
 #include <uuid/uuid.h>
+#include <curl/curl.h>
 
 #define BIGBUF 500000
 #define BUFLEN 2000
@@ -62,5 +63,6 @@
 #include "globs.h"
 #include "daemon.h"
 #include "sha-wrapper.h"
+#include "curl-wrapper.h"
 
 #endif

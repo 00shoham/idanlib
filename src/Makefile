@@ -14,6 +14,7 @@ OBJ=\
   sha-wrapper.o\
   str-utils.o\
   tag-value.o\
+  curl-wrapper.o\
 
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
