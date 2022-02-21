@@ -17,7 +17,6 @@ size_t CurlWriteback( void *payload,
                       void *data );
 CURLcode WebTransaction( char* url,
                          enum httpMethod method,
-                         char* queryString,
                          char* postData,
                          int postDataBinarySize, /* set if postData includes \000s */
                          _DATA* postResult,
