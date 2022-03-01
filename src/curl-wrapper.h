@@ -33,5 +33,10 @@ CURLcode WebTransaction( char* url,
                          char** errorMsg
                          );
 
+/* same as above but input args come from a _TAG_VALUE linked list */
+int WebTransactionTV( _TAG_VALUE* args,
+                      _DATA* postResult,
+                      char** errorMsg );
+
 
 #endif

@@ -253,3 +253,102 @@ CURLcode WebTransaction( char* url,
   return (int)res;
   }
 
+int WebTransactionTV( _TAG_VALUE* args,
+                      _DATA* postResult,
+                      char** errorMsg )
+  {
+  if( args==NULL )
+    {
+    Warning( "WebTransactionTV with no arguments" );
+    return -1;
+    }
+
+  char* url = GetTagValue( args, "url" );
+  if( url==NULL )
+    {
+    Warning( "WebTransactionTV with no 'url' argument" );
+    return -2;
+    }
+
+  char* methodString = GetTagValue( args, "method" );
+  if( methodString==NULL )
+    {
+    Warning( "WebTransactionTV with no 'method' argument" );
+    return -3;
+    }
+  if( strcmp( methodString, "get" )!=0
+      && strcmp( methodString, "post" )!=0 )
+    {
+    Warning( "WebTransactionTV 'method' argument must be 'get' or 'post'" );
+    return -4;
+    }
+
+  enum httpMethod method = HTTP_GET;
+  if( strcmp( methodString, "post" )==0 )
+    method = HTTP_POST;
+
+  char* postData = GetTagValue( args, "post_data" );
+  if( postData!=NULL && method != HTTP_POST )
+    {
+    Warning( "WebTransactionTV 'method' is not 'post' but post data provided" );
+    return -5;
+    }
+
+  int postDataBinarySize = GetTagValueInt( args, "post_size" );
+  if( postData!=NULL )
+    {
+    if( postDataBinarySize==INVALID_INT )
+      postDataBinarySize = 0;
+    }
+  else
+    {
+    if( postDataBinarySize==INVALID_INT )
+      postDataBinarySize = 0;
+    else
+      {
+      Warning( "WebTransactionTV: post_size provided for non-POST request" );
+      return -6;
+      }
+    }
+
+  char* urlUsername = GetTagValue( args, "url_username" );
+  char* urlPassword = GetTagValue( args, "url_password" );
+
+  char* proxyURL = GetTagValue( args, "proxy_url" );
+  char* proxyUsername = GetTagValue( args, "proxy_username" );
+  char* proxyPassword = GetTagValue( args, "proxy_password" );
+
+  int timeoutSeconds = GetTagValueInt( args, "timeout_seconds" );;
+  if( timeoutSeconds==INVALID_INT )
+    timeoutSeconds = 0;
+
+  char* userAgent = GetTagValue( args, "user_agent" );
+  char* cookieFile = GetTagValue( args, "cookie_file" );
+
+  int skipVerifyPeer = GetTagValueInt( args, "skip_verify_peer" );
+  if( skipVerifyPeer==INVALID_INT )
+    skipVerifyPeer = 0;
+
+  int skipVerifyHost = GetTagValueInt( args, "skip_verify_host" );
+  if( skipVerifyHost==INVALID_INT )
+    skipVerifyHost = 0;
+
+  return WebTransaction( url,
+                         method,
+                         postData,
+                         postDataBinarySize, /* set if postData includes \000s */
+                         postResult,
+                         urlUsername,
+                         urlPassword,
+                         proxyURL,
+                         proxyUsername,
+                         proxyPassword,
+                         timeoutSeconds,
+                         userAgent,
+                         cookieFile,
+                         skipVerifyPeer,
+                         skipVerifyHost,
+                         errorMsg
+                         );
+  }
+
