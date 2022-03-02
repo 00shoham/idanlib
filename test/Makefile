@@ -3,6 +3,7 @@ BIN=\
   hextime\
   http-get-test\
   json-parse-test\
+  json-parse-test-2\
   print-env-from-cgi\
   regexp-test\
   sha-test\

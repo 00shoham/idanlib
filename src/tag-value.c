@@ -534,6 +534,12 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
     strncpy( ptr, ": ", end-ptr );
       ptr += strlen( ptr );
     }
+  else
+    {
+    strncpy( ptr, "\"\": ", end-ptr );
+      ptr += strlen( ptr );
+    }
+
   switch( list->type )
     {
     case VT_INVALID:

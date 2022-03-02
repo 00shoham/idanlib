@@ -165,6 +165,8 @@ _TAG_VALUE* ParseJSON( const char* string )
   char* tag = NULL;
   char* value = NULL;
 
+  /* printf( "ParseJSON( %s )\n", NULLPROTECT( string ) ); */
+
   if( EMPTY( string ) )
     {
     /* maybe that's sometimes okay */
