@@ -64,5 +64,6 @@
 #include "daemon.h"
 #include "sha-wrapper.h"
 #include "curl-wrapper.h"
+#include "lua-wrapper.h"
 
 #endif
