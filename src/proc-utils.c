@@ -199,7 +199,8 @@ int AsyncReadFromChildProcess( char* cmd,
                                int sleepSeconds,
                                void* params,
                                void (*GotLineCallback)( void*, char* ),
-                               void (*TimeoutCallback)( void* )
+                               void (*TimeoutCallback)( void* ),
+                               void (*CallBetweenReads)( )
                                )
   {
   int fileDesc = -1;
@@ -269,6 +270,9 @@ int AsyncReadFromChildProcess( char* cmd,
       sleep( sleepSeconds );
       (*TimeoutCallback)( params );
       }
+
+    if( CallBetweenReads!=NULL )
+      (*CallBetweenReads)();
     }
 
   close( fileDesc );

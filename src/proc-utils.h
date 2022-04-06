@@ -10,7 +10,8 @@ int AsyncReadFromChildProcess( char* cmd,
                                int sleepSeconds,
                                void* params,
                                void (*GotLineCallback)( void*, char* ),
-                               void (*TimeoutCallback)( void* )
+                               void (*TimeoutCallback)( void* ),
+                               void (*CallBetweenReads)( )
                                );
 int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, int maxtimeSeconds );
 int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int timeoutSeconds, int maxtimeSeconds );
