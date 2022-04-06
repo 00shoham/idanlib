@@ -1,9 +1,5 @@
 #include "utils.h"
 
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-
 const char* LuaTypeName( int type )
   {
   switch( type )
