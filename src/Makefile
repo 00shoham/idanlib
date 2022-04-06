@@ -1,4 +1,5 @@
 OBJ=\
+  curl-wrapper.o\
   daemon.o\
   date-utils.o\
   error.o\
@@ -6,6 +7,7 @@ OBJ=\
   globs.o\
   http.o\
   json-parser.o\
+  lua-wrapper.o\
   mem-utils.o\
   nargv.o\
   net-utils.o\
@@ -14,16 +16,17 @@ OBJ=\
   sha-wrapper.o\
   str-utils.o\
   tag-value.o\
-  curl-wrapper.o\
 
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
 
-CC=gcc
-CFLAGS=-Wall -O2 -g
+LUADIR=/usr/include/lua5.3
+INCLUDES=-I$(LUADIR)
+CFLAGS=-Wall -O2 -g $(INCLUDES)
+CC=gcc $(CFLAGS)
 
 %.o: %.c $(wildcard *.h)
-	$(CC) $(CFLAGS) -c $<
+	$(CC) -c $<
 
 clean: NULL
 	rm -f $(OBJ) utils.a
