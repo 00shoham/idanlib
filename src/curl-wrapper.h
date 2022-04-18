@@ -9,6 +9,7 @@ typedef struct _data
   } _DATA;
 
 #define DEFAULT_USER_AGENT "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+#define DEFAULT_COOKIES_FILE "/tmp/cookies.txt"
 
 void AllocateData( _DATA* d, size_t n );
 void FreeData( _DATA* d );

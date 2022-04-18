@@ -13,59 +13,92 @@ const char* LuaTypeName( int type )
     }
   }
 
-void PrintStackLocation( lua_State* L, int index )
+int LuaPrintTable( lua_State* L )
   {
-  int type = lua_type( L, index );
-  printf( "@ %d: %s = ", index, LuaTypeName( type ) );
-  fflush(stdout);
-  switch( type )
+  lua_pushnil( L );  /* first key */
+  printf( "{ " );
+  int first = 1;
+  while( lua_next(L, -2 ) != 0 )
     {
-    case LUA_TNIL:
-      printf( "nil\n" );
-      break;
-
-    case LUA_TBOOLEAN:
-      printf( "%s\n", lua_toboolean( L, index) ? "true" : "false" );
-      break;
-
-    case LUA_TNUMBER:
-      printf( "%lg\n", lua_tonumber( L, index) );
-      break;
-
-    case LUA_TSTRING:
-      printf( "%s\n", lua_tostring( L, index) );
-      break;
-
-    case LUA_TTABLE:
-      printf( "{table}\n" );
-      break;
-
-    default:
-      printf( "{other data}\n" );
-      break;
+    if( first )
+      {}
+    else
+      printf( ", " );
+    if( lua_isstring( L, -1 ) )
+      printf( "%s = %s", lua_tostring( L, -2 ), lua_tostring( L, -1 ) );
+    else if( lua_isnumber( L, -1) )
+      printf( "%s = %lf", lua_tostring( L, -2 ), lua_tonumber( L, -1 ) );
+    else if( lua_isboolean( L, -1) )
+      printf( "%s = %s", lua_tostring( L, -2 ), lua_toboolean( L, -1 ) ? "true":"false" );
+    else if( lua_istable( L, -1 ) )
+      {
+      printf( "%s = ", lua_tostring( L, -2 ) );
+      (void)LuaPrintTable( L );
+      }
+    lua_remove( L, -1 );
+    first = 0;
     }
+  printf( " }" );
+
+  return 0;
   }
 
-int PrintLuaStack( lua_State* L )
+int LuaPrintStack( lua_State* L )
   {
-  int n = lua_gettop( L );
-  printf( "Stack has %d items\n", n );
-  for( int i=1; i<=n; ++i )
-    PrintStackLocation( L, -1 * i );
+  for( int i=1; i<=lua_gettop( L ); ++i )
+    {
+    int type = lua_type( L, i );
+    printf( "  @%d %s: ", i, LuaTypeName( type ) );
+    switch( type )
+      {
+      case LUA_TNIL:
+        printf( "nil\n" );
+        break;
+
+      case LUA_TBOOLEAN:
+        printf( "%s\n", lua_toboolean( L, i ) ? "true" : "false" );
+        break;
+
+      case LUA_TNUMBER:
+        printf( "%lg\n", lua_tonumber( L, i ) );
+        break;
+
+      case LUA_TSTRING:
+        printf( "%s\n", lua_tostring( L, i ) );
+        break;
+
+      case LUA_TTABLE:
+        lua_pushvalue( L, i );
+        (void)LuaPrintTable( L );
+        lua_remove( L, -1 );
+        printf( "\n" );
+        break;
+
+      default:
+        printf( "{other data}\n" );
+        break;
+      }
+    }
+
   return 0;
   }
 
 int TagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
   {
   lua_newtable( L );
-  for( _TAG_VALUE* t = list; t!=NULL; t=t->next )
+  int index = 1;
+  for( _TAG_VALUE* t = list; t!=NULL; t=t->next, ++index )
     {
     if( EMPTY( t->tag ) )
       {
-      Warning( "TAG_VALUE empty tag" );
-      continue;
+      char buf[100];
+      snprintf( buf, sizeof(buf)-1, "no-tag-index-%d", index );
+      lua_pushstring( L, buf );
       }
-    lua_pushstring( L, t->tag );
+    else
+      {
+      lua_pushstring( L, t->tag );
+      }
 
     switch( t->type )
       {
@@ -89,7 +122,7 @@ int TagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
         break;
 
       case VT_LIST:
-        TagValueTableOnLuaStack( L, list->subHeaders );
+        TagValueTableOnLuaStack( L, t->subHeaders );
         break;
 
       default:
@@ -116,7 +149,7 @@ _TAG_VALUE* LuaTableToTagValue( lua_State *L )
   /* table is in the stack at index -1 */
   lua_pushnil( L );  /* first key */
 
-  /* we have table @ -2, key @ -2 initially */
+  /* we have table @ -2, key @ -1 initially */
   while( lua_gettop( L ) >= 2 && lua_next(L, -2) != 0 )
     {
     /* lua_next() yields table @ -3, key @ -2, value @ -1 */
@@ -254,6 +287,116 @@ int GetTableSizeFunction( lua_State* L )
   return 1;
   }
 
+int LUAWebTransaction( lua_State* L )
+  {
+  char* me = "LUAWebTransaction";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* url = GetTagValue( tv, "URL" );
+  if( EMPTY( url ) )
+    {
+    Warning( "%s: URL not set", me );
+    return 0;
+    }
+
+  enum httpMethod method = HTTP_GET;
+  char* methodString = GetTagValue( tv, "METHOD" );
+  if( !EMPTY( methodString ) )
+    {
+    if( strcasecmp( methodString, "GET" )==0 )
+      method = HTTP_GET;
+    else if( strcasecmp( methodString, "POST" )==0 )
+      method = HTTP_POST;
+    else
+      {
+      Warning( "%s: METHOD must be GET|POST", me );
+      return 0;
+      }
+    }
+
+  char* postData = GetTagValue( tv, "POST_DATA" );
+  if( EMPTY( postData ) )
+    postData = NULL;
+
+  char* urlUserID = GetTagValue( tv, "URL_USER_ID" );
+  if( EMPTY( urlUserID ) )
+    urlUserID = NULL;
+
+  char* urlPassword = GetTagValue( tv, "URL_PASSWORD" );
+  if( EMPTY( urlPassword ) )
+    urlPassword = NULL;
+
+  char* proxyURL = GetTagValue( tv, "PROXY_URL" );
+  if( EMPTY( proxyURL ) )
+    proxyURL = NULL;
+
+  char* proxyUserID = GetTagValue( tv, "PROXY_USER_ID" );
+  if( EMPTY( proxyUserID ) )
+    proxyUserID = NULL;
+
+  char* proxyPassword = GetTagValue( tv, "PROXY_PASSWORD" );
+  if( EMPTY( proxyPassword ) )
+    proxyPassword = NULL;
+
+  int timeoutSeconds = GetTagValueInt( tv, "TIMEOUT_SECONDS" );
+  if( timeoutSeconds<0 )
+    timeoutSeconds = 0;
+
+  char* userAgent = GetTagValue( tv, "USER_AGENT" );
+  if( EMPTY( userAgent ) )
+    userAgent = NULL;
+
+  char* cookiesFile = GetTagValue( tv, "COOKIES_FILE" );
+  if( EMPTY( cookiesFile ) )
+    cookiesFile = DEFAULT_COOKIES_FILE;
+
+  int skipPeerVerify = 0;
+  char* skipPeerVerifyString = GetTagValue( tv, "SKIP_PEER_VERIFY" );
+  if( ! EMPTY( skipPeerVerifyString ) )
+    skipPeerVerify = 1;
+
+  int skipHostVerify = 0;
+  char* skipHostVerifyString = GetTagValue( tv, "SKIP_HOST_VERIFY" );
+  if( ! EMPTY( skipHostVerifyString ) )
+    skipHostVerify = 1;
+
+  _DATA d = { 0, NULL, NULL };
+  char* errMsg = NULL;
+
+  CURLcode err =
+    WebTransaction( url, method,                           /* url and method */
+                    postData, 0,                           /* postData, postBinLen */
+                    &d,                                    /* data back */
+                    urlUserID, urlPassword,                /* url creds */
+                    proxyURL, proxyUserID, proxyPassword,  /* proxy url and creds */
+                    timeoutSeconds,                        /* timeout */
+                    userAgent,                             /* user agent */
+                    cookiesFile,                           /* cookies file */
+                    skipPeerVerify,                        /* do not skip peer verify */
+                    skipHostVerify,                        /* do not skip host verify */
+                    &errMsg
+                    );
+                         
+  if( err != CURLE_OK )
+    {
+    Warning( "%s: CURL says - %s", me, errMsg );
+    FreeData( &d);
+    return 0;
+    }
+  else
+    {
+    lua_pushstring( L, (char*)d.data );
+    FreeData( &d);
+    return 1;
+    }
+  }
+
 lua_State* LUAInit()
   {
   lua_State *L = luaL_newstate();    /* opens Lua */
@@ -267,8 +410,14 @@ lua_State* LUAInit()
   lua_pushcfunction( L, GetTableSizeFunction );
   lua_setglobal( L, "GetTableSize" );
 
-  lua_pushcfunction( L, PrintLuaStack );
-  lua_setglobal( L, "PrintLuaStack " );
+  lua_pushcfunction( L, LuaPrintTable );
+  lua_setglobal( L, "LuaPrintTable" );
+
+  lua_pushcfunction( L, LuaPrintStack );
+  lua_setglobal( L, "LuaPrintStack" );
+
+  lua_pushcfunction( L, LUAWebTransaction );
+  lua_setglobal( L, "WebTransaction" );
 
   // load the libs
   luaL_openlibs(L);

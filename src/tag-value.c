@@ -549,6 +549,8 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
         Warning( "Printing tags - [%s] has invalid type", NULLPROTECT( list->tag ) );
       break;
     case VT_LIST:
+      snprintf( ptr, (int)(end-ptr), "(list) " );
+        ptr += strlen( ptr );
       if( list->subHeaders==NULL )
         {
         strncpy( ptr, "[]", end-ptr );
@@ -572,9 +574,11 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
       break;
     case VT_INT:
       snprintf( ptr, (int)(end-ptr), "(int) %d", list->iValue );
+      ptr += strlen( ptr );
       break;
     case VT_DOUBLE:
       snprintf( ptr, (int)(end-ptr), "(double) %lf", list->dValue );
+      ptr += strlen( ptr );
       break;
     }
   /*
