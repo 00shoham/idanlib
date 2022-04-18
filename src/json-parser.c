@@ -492,6 +492,38 @@ int CompareJSON( const char* jsonA, const char* jsonB,
   return c;
   }
 
+int NearlyInteger( double d, int* iValue )
+  {
+  if( d==0.0 )
+    {
+    *iValue = 0;
+    return 1;
+    }
+
+  int isNegative = d<0 ? 1 : 0;
+  double positiveD = fabs(d);
+  double nearestInt = floor( positiveD + 0.499999999 );
+  double gapD = fabs( nearestInt - positiveD );
+  
+  if( gapD < 0.000000001 )
+    {
+    if( positiveD < nearestInt )
+      positiveD += 0.000000002;
+    d = floor( nearestInt );
+    if( isNegative )
+      {
+      *iValue = -1 * (int)d;
+      }
+    else
+      {
+      *iValue = (int)d;
+      }
+    return 1;
+    }
+
+  return 0;
+  }
+
 int ListToJSON( _TAG_VALUE* list, char* buf, int bufLen )
   {
   if( buf==NULL || bufLen<10 )
@@ -560,8 +592,19 @@ int ListToJSON( _TAG_VALUE* list, char* buf, int bufLen )
           break;
 
         case VT_DOUBLE:
-          snprintf( ptr, end-ptr, "%lf", list->dValue );
-          ptr += strlen( ptr );
+          {
+          int iValue;
+          if( NearlyInteger( list->dValue, &iValue ) )
+            {
+            snprintf( ptr, end-ptr, "%d", iValue );
+            ptr += strlen( ptr );
+            }
+          else
+            {
+            snprintf( ptr, end-ptr, "%lf", list->dValue );
+            ptr += strlen( ptr );
+            }
+          }
           break;
 
         case VT_LIST:

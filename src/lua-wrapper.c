@@ -411,10 +411,10 @@ lua_State* LUAInit()
   lua_setglobal( L, "GetTableSize" );
 
   lua_pushcfunction( L, LuaPrintTable );
-  lua_setglobal( L, "LuaPrintTable" );
+  lua_setglobal( L, "PrintTable" );
 
   lua_pushcfunction( L, LuaPrintStack );
-  lua_setglobal( L, "LuaPrintStack" );
+  lua_setglobal( L, "PrintStack" );
 
   lua_pushcfunction( L, LUAWebTransaction );
   lua_setglobal( L, "WebTransaction" );
