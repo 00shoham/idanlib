@@ -324,6 +324,10 @@ int LUAWebTransaction( lua_State* L )
   if( EMPTY( postData ) )
     postData = NULL;
 
+  char* postContentType = GetTagValue( tv, "CONTENT_TYPE" );
+  if( EMPTY( postContentType ) )
+    postContentType = NULL;
+
   char* urlUserID = GetTagValue( tv, "URL_USER_ID" );
   if( EMPTY( urlUserID ) )
     urlUserID = NULL;
@@ -371,7 +375,7 @@ int LUAWebTransaction( lua_State* L )
 
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
-                    postData, 0,                           /* postData, postBinLen */
+                    postData, 0, postContentType,          /* postData, postBinLen */
                     &d,                                    /* data back */
                     urlUserID, urlPassword,                /* url creds */
                     proxyURL, proxyUserID, proxyPassword,  /* proxy url and creds */
@@ -397,6 +401,28 @@ int LUAWebTransaction( lua_State* L )
     }
   }
 
+int LUASleep( lua_State* L )
+  {
+  if( lua_gettop( L )<1 || ! lua_isnumber(L, -1) )
+    {
+    Warning( "LUASleep: Top of LUA stack is not a number" );
+    return 0;
+    }
+
+  double n = lua_tonumber( L, -1 );
+  lua_remove( L, -1 );
+  if( n<=0 )
+    {
+    Warning( "%s: Cannot sleep for %lg seconds", n );
+    return 0;
+    }
+
+  int in = (int)n;
+  sleep( in );
+
+  return 0;
+  }
+
 lua_State* LUAInit()
   {
   lua_State *L = luaL_newstate();    /* opens Lua */
@@ -418,6 +444,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUAWebTransaction );
   lua_setglobal( L, "WebTransaction" );
+
+  lua_pushcfunction( L, LUASleep );
+  lua_setglobal( L, "Sleep" );
 
   // load the libs
   luaL_openlibs(L);

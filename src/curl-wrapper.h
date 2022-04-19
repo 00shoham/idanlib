@@ -20,6 +20,7 @@ CURLcode WebTransaction( char* url,
                          enum httpMethod method,
                          char* postData,
                          int postDataBinarySize, /* set if postData includes \000s */
+                         char* postContentType,
                          _DATA* postResult,
                          char* urlUsername,
                          char* urlPassword,

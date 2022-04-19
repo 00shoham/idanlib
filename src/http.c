@@ -1,6 +1,7 @@
 #include "utils.h"
 
-#undef DEBUG
+/* #undef DEBUG */
+#define DEBUG 1
 
 char hexDigits[] = "0123456789abcdef";
 
@@ -1019,6 +1020,7 @@ char* myfgets( char* buf, int buflen, FILE* f )
     if( debugOutput!=NULL )
       {
       fputs( buf, debugOutput );
+      fflush( debugOutput );
       }
     }
 
@@ -1034,6 +1036,7 @@ int myfgetc( FILE* f )
   if( debugOutput!=NULL )
     {
     fputc( c, debugOutput );
+    fflush( debugOutput );
     }
 
   return c;
@@ -1045,6 +1048,7 @@ size_t myfread( void *ptr, size_t size, size_t nmemb, FILE *stream)
   if( n>0 && debugOutput!=NULL )
     {
     (void)fwrite( ptr, size, n, debugOutput );
+    fflush( debugOutput );
     }
   /* LogMessage("fread() --> %d items", n); */
 

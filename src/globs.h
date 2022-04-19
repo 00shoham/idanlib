@@ -1,6 +1,7 @@
 #ifndef _INCLUDE_GLOBS
 #define _INCLUDE_GLOBS
 
+extern FILE* debugOutput;
 extern FILE* remoteReadHandle;
 extern FILE* remoteWriteHandle;
 extern pthread_t timerThread;

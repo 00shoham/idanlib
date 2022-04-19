@@ -1,5 +1,8 @@
 #include "utils.h"
 
+/* #define DEBUG 1 */
+#undef DEBUG
+
 void AllocateData( _DATA* d, size_t n )
   {
   if( d==NULL )
@@ -78,10 +81,126 @@ size_t CurlWriteback( void *payload,
   return messageSize;
   }
 
+#ifdef DEBUG
+struct curlDebugData
+  {
+  int nohex; /* 1 or 0 */
+  };
+ 
+static
+void CurlDebugDump(const char *text,
+          FILE *stream, unsigned char *ptr, size_t size,
+          int nohex)
+  {
+  size_t i;
+  size_t c;
+ 
+  unsigned int width = 0x10;
+ 
+  /* without the hex output, we can fit more on screen */
+  if(nohex)
+    width = 0x40;
+ 
+  fprintf( stream, "%s, %10.10lu bytes (0x%8.8lx)\n",
+           text, (unsigned long)size, (unsigned long)size );
+ 
+  for( i=0; i<size; i += width )
+    {
+    fprintf(stream, "%4.4lx: ", (unsigned long)i);
+ 
+    if( !nohex )
+      {
+      /* hex not disabled, show it */
+      for( c = 0; c < width; c++ )
+        if( i + c < size )
+          fprintf(stream, "%02x ", ptr[i + c]);
+        else
+          fputs("   ", stream);
+      }
+ 
+    for( c = 0; (c < width) && (i + c < size); c++ )
+      {
+      /* check for 0D0A; if found, skip past and start a new line of output */
+      if( nohex
+          && (i + c + 1 < size)
+          && ptr[i + c] == 0x0d
+          && ptr[i + c + 1] == 0x0a )
+        {
+        i += (c + 2 - width);
+        break;
+        }
+
+      fprintf( stream, "%c",
+               (ptr[i + c] >= 0x20) && (ptr[i + c]<0x80) ? ptr[i + c] : '.' );
+
+      /* check again for 0D0A, to avoid an extra \n if it's at width */
+      if( nohex
+          && (i + c + 2 < size)
+          && ptr[i + c + 1] == 0x0d
+          && ptr[i + c + 2] == 0x0a)
+        {
+        i += (c + 3 - width);
+        break;
+        }
+      }
+
+    fputc('\n', stream); /* newline */
+    }
+
+  fflush(stream);
+  }
+ 
+static int CurlDebugTrace( CURL *handle, curl_infotype type,
+                           char *data, size_t size,
+                           void *userp )
+  {
+  struct curlDebugData *config = (struct curlDebugData *)userp;
+  const char *text;
+  (void)handle; /* prevent compiler warning */
+ 
+  switch(type)
+    {
+    case CURLINFO_TEXT:
+      fprintf(stderr, "== Info: %s", data);
+      /* FALLTHROUGH */
+    default: /* in case a new one is introduced to shock us */
+      return 0;
+   
+    case CURLINFO_HEADER_OUT:
+      text = "=> Send header";
+      break;
+
+    case CURLINFO_DATA_OUT:
+      text = "=> Send data";
+      break;
+
+    case CURLINFO_SSL_DATA_OUT:
+      text = "=> Send SSL data";
+      break;
+
+    case CURLINFO_HEADER_IN:
+      text = "<= Recv header";
+      break;
+
+    case CURLINFO_DATA_IN:
+      text = "<= Recv data";
+      break;
+
+    case CURLINFO_SSL_DATA_IN:
+      text = "<= Recv SSL data";
+      break;
+    }
+ 
+  CurlDebugDump(text, stderr, (unsigned char *)data, size, config->nohex);
+  return 0;
+  }
+#endif 
+
 CURLcode WebTransaction( char* url,
                          enum httpMethod method,
                          char* postData,
                          int postDataBinarySize, /* set if postData includes \000s */
+                         char* postContentType,
                          _DATA* postResult,
                          char* urlUsername,
                          char* urlPassword,
@@ -166,6 +285,14 @@ CURLcode WebTransaction( char* url,
   curl_easy_setopt( curl, CURLOPT_ERRORBUFFER, errorBuffer );
 
   curl_easy_setopt( curl, CURLOPT_URL, url );
+
+  /* disable default headers */
+  struct curl_slist *hs=NULL;
+  hs = curl_slist_append( hs, "Host:" );
+  hs = curl_slist_append( hs, "Accept:" );
+  hs = curl_slist_append( hs, "Accept-Encoding:" );
+  curl_easy_setopt( curl, CURLOPT_HTTPHEADER, hs );
+
   char* whatToPost = NULL;
   if( method==HTTP_POST )
     {
@@ -173,6 +300,14 @@ CURLcode WebTransaction( char* url,
     if( NOTEMPTY( postData ) )
       {
       whatToPost = postData;
+      if( NOTEMPTY( postContentType ) )
+        {
+        char buf[BUFLEN];
+        snprintf( buf, sizeof(buf)-1, "Content-Type: %s", postContentType );
+        hs = curl_slist_append( hs, buf );
+        curl_easy_setopt( curl, CURLOPT_HTTPHEADER, hs );
+        }
+
       if( postDataBinarySize )
         {
         whatToPost = curl_easy_escape( curl, postData, postDataBinarySize );
@@ -216,8 +351,6 @@ CURLcode WebTransaction( char* url,
 
   if( NOTEMPTY( userAgent ) )
     curl_easy_setopt( curl, CURLOPT_USERAGENT, userAgent );
-  else
-    curl_easy_setopt( curl, CURLOPT_USERAGENT, DEFAULT_USER_AGENT );
 
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYHOST, skipVerifyHost ? 0 : 2 );
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, skipVerifyPeer ? 0 : 1 );
@@ -229,6 +362,14 @@ CURLcode WebTransaction( char* url,
     curl_easy_setopt( curl, CURLOPT_WRITEDATA, (void *)postResult );
     curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, CurlWriteback );
     }
+
+#ifdef DEBUG
+  struct curlDebugData config;
+  config.nohex = 1; /* enable ascii tracing */
+  curl_easy_setopt( curl, CURLOPT_DEBUGFUNCTION, CurlDebugTrace );
+  curl_easy_setopt( curl, CURLOPT_DEBUGDATA, &config );
+  curl_easy_setopt( curl, CURLOPT_VERBOSE, 1L );
+#endif
 
   res = curl_easy_perform( curl );
   if( res != CURLE_OK )
@@ -311,6 +452,8 @@ int WebTransactionTV( _TAG_VALUE* args,
       }
     }
 
+  char* postContentType = GetTagValue( args, "CONTENT_TYPE" );
+
   char* urlUsername = GetTagValue( args, "url_username" );
   char* urlPassword = GetTagValue( args, "url_password" );
 
@@ -337,6 +480,7 @@ int WebTransactionTV( _TAG_VALUE* args,
                          method,
                          postData,
                          postDataBinarySize, /* set if postData includes \000s */
+                         postContentType,
                          postResult,
                          urlUsername,
                          urlPassword,

@@ -1,5 +1,6 @@
 #include "utils.h"
 
+FILE* debugOutput = NULL;
 FILE* remoteReadHandle = NULL;
 FILE* remoteWriteHandle = NULL;
 pthread_t timerThread = 0;
