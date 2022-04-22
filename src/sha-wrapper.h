@@ -9,5 +9,6 @@ int GeneratePasswordHistoryRecord( char* userID, char* password, char** record )
 int ParseHistoryRecord( char* record,
                         char** user, time_t* when,
                         char** salt, char** hash );
+void SHA1hex( char* hash, char* plainText, int ptLen );
 
 #endif

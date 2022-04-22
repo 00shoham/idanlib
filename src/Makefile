@@ -12,6 +12,7 @@ OBJ=\
   nargv.o\
   net-utils.o\
   proc-utils.o\
+  sha1.o\
   sha256.o\
   sha-wrapper.o\
   str-utils.o\

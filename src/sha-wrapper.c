@@ -1,6 +1,6 @@
 #include "sha256.h"
+#include "sha1.h"
 #include "utils.h"
-
 
 #define SALT_LENGTH 4
 
@@ -159,3 +159,21 @@ int ParseHistoryRecord( char* record,
 
   return 0;
   }
+
+char* sha1hexdigits = "0123456789ABCDEF";
+void SHA1hex( char* hash, char* plainText, int ptLen )
+  {
+  char rawHash[30];
+  SHA1( rawHash, plainText, ptLen );
+  char* ptr = hash;
+  for( int i=0; i<20; ++i )
+    {
+    int c = rawHash[i];
+    int h = (c & 0xf0)>>4;
+    int l = (c & 0x0f);
+    *(ptr++) = sha1hexdigits[h];
+    *(ptr++) = sha1hexdigits[l];
+    }
+  *ptr = 0;
+  }
+
