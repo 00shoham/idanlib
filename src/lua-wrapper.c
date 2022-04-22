@@ -352,9 +352,12 @@ int LUAWebTransaction( lua_State* L )
   if( timeoutSeconds<0 )
     timeoutSeconds = 0;
 
+  _TAG_VALUE* httpHeaders = NULL;
   char* userAgent = GetTagValue( tv, "USER_AGENT" );
   if( EMPTY( userAgent ) )
     userAgent = NULL;
+  else
+    httpHeaders = NewTagValue( "user-agent", userAgent, httpHeaders, 1 );
 
   char* cookiesFile = GetTagValue( tv, "COOKIES_FILE" );
   if( EMPTY( cookiesFile ) )
@@ -380,7 +383,7 @@ int LUAWebTransaction( lua_State* L )
                     urlUserID, urlPassword,                /* url creds */
                     proxyURL, proxyUserID, proxyPassword,  /* proxy url and creds */
                     timeoutSeconds,                        /* timeout */
-                    userAgent,                             /* user agent */
+                    httpHeaders,                           /* user agent */
                     cookiesFile,                           /* cookies file */
                     skipPeerVerify,                        /* do not skip peer verify */
                     skipHostVerify,                        /* do not skip host verify */

@@ -208,7 +208,7 @@ CURLcode WebTransaction( char* url,
                          char* proxyUsername,
                          char* proxyPassword,
                          int timeoutSeconds,
-                         char* userAgent,
+                         _TAG_VALUE* httpHeaders,
                          char* cookieFile,
                          int skipVerifyPeer,
                          int skipVerifyHost,
@@ -286,12 +286,25 @@ CURLcode WebTransaction( char* url,
 
   curl_easy_setopt( curl, CURLOPT_URL, url );
 
-  /* disable default headers */
   struct curl_slist *hs=NULL;
-  hs = curl_slist_append( hs, "Host:" );
-  hs = curl_slist_append( hs, "Accept:" );
-  hs = curl_slist_append( hs, "Accept-Encoding:" );
-  curl_easy_setopt( curl, CURLOPT_HTTPHEADER, hs );
+  int nHeaders = 0;
+  for( _TAG_VALUE* tv=httpHeaders; tv!=NULL; tv=tv->next )
+    {
+    if( NOTEMPTY( tv->tag ) && NOTEMPTY( tv->value ) )
+      {
+      if( strcasecmp( tv->tag, "user-agent" )==0 )
+        {
+        curl_easy_setopt( curl, CURLOPT_USERAGENT, tv->value );
+        }
+      else
+        {
+        char buf[BUFLEN];
+        snprintf( buf, sizeof(buf)-1, "%s=%s", tv->tag, tv->value );
+        hs = curl_slist_append( hs, buf );
+        ++nHeaders;
+        }
+      }
+    }
 
   char* whatToPost = NULL;
   if( method==HTTP_POST )
@@ -305,7 +318,7 @@ CURLcode WebTransaction( char* url,
         char buf[BUFLEN];
         snprintf( buf, sizeof(buf)-1, "Content-Type: %s", postContentType );
         hs = curl_slist_append( hs, buf );
-        curl_easy_setopt( curl, CURLOPT_HTTPHEADER, hs );
+        ++nHeaders;
         }
 
       if( postDataBinarySize )
@@ -349,9 +362,6 @@ CURLcode WebTransaction( char* url,
   if( timeoutSeconds>0 )
     curl_easy_setopt( curl, CURLOPT_TIMEOUT, timeoutSeconds );
 
-  if( NOTEMPTY( userAgent ) )
-    curl_easy_setopt( curl, CURLOPT_USERAGENT, userAgent );
-
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYHOST, skipVerifyHost ? 0 : 2 );
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, skipVerifyPeer ? 0 : 1 );
 
@@ -370,6 +380,11 @@ CURLcode WebTransaction( char* url,
   curl_easy_setopt( curl, CURLOPT_DEBUGDATA, &config );
   curl_easy_setopt( curl, CURLOPT_VERBOSE, 1L );
 #endif
+
+  if( nHeaders )
+    {
+    curl_easy_setopt( curl, CURLOPT_HTTPHEADER, hs );
+    }
 
   res = curl_easy_perform( curl );
   if( res != CURLE_OK )
@@ -465,7 +480,6 @@ int WebTransactionTV( _TAG_VALUE* args,
   if( timeoutSeconds==INVALID_INT )
     timeoutSeconds = 0;
 
-  char* userAgent = GetTagValue( args, "user_agent" );
   char* cookieFile = GetTagValue( args, "cookie_file" );
 
   int skipVerifyPeer = GetTagValueInt( args, "skip_verify_peer" );
@@ -475,6 +489,10 @@ int WebTransactionTV( _TAG_VALUE* args,
   int skipVerifyHost = GetTagValueInt( args, "skip_verify_host" );
   if( skipVerifyHost==INVALID_INT )
     skipVerifyHost = 0;
+
+  _TAG_VALUE* httpHeaders = FindTagValue( args, "http_headers" );
+  if( httpHeaders!=NULL )
+    httpHeaders = httpHeaders->subHeaders;
 
   return WebTransaction( url,
                          method,
@@ -488,7 +506,7 @@ int WebTransactionTV( _TAG_VALUE* args,
                          proxyUsername,
                          proxyPassword,
                          timeoutSeconds,
-                         userAgent,
+                         httpHeaders,
                          cookieFile,
                          skipVerifyPeer,
                          skipVerifyHost,
