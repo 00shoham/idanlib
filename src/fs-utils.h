@@ -55,6 +55,7 @@ int GetAvailableSpaceOnVolume( char* path, char* buf, int bufLen );
 long GetAvailableSpaceOnVolumeBytes( char* path );
 int CountFilesInFolder( char* folder, char* prefix, char* suffix,
                         time_t *earliest, time_t* latest );
+int FileMatchesRegex( char* expr, char* fileName );
 
 #endif
 

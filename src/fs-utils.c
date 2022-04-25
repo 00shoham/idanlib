@@ -961,5 +961,50 @@ int RotateFile( char* path, int keepN )
   return err;
   }
 
+/* Regular expression test.
+ * 0 = match.
+ */
+int FileMatchesRegex( char* expr, char* fileName )
+  {
+  if( EMPTY( expr ) )
+    {
+    return 0;
+    }
+
+  if( EMPTY( fileName ) )
+    {
+    return 0;
+    }
+
+  FILE* f = fopen( fileName, "r" );
+  if( f==NULL )
+    {
+    Warning( "Cannot open %s", fileName );
+    return 0;
+    }
+
+  regex_t re;
+  int err = regcomp( &re, expr, REG_EXTENDED|REG_NOSUB );
+  if( err!=0 )
+    {
+    Warning("Cannot compile e-mail RegExp: [%s] (%d)", expr, err);
+    return -100 + err;
+    }
+
+  char buf[BUFLEN];
+  int status = -1;
+  while( fgets( buf, sizeof(buf)-2, f )==buf )
+    {
+    status = regexec( &re, buf, 0, NULL, 0 );
+    if( status==0 )
+      break;
+    }
+
+  fclose( f );
+  regfree( &re );
+
+  return status;
+  }
+
 
 
