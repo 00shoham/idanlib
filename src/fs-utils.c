@@ -1005,6 +1005,3 @@ int FileMatchesRegex( char* expr, char* fileName )
 
   return status;
   }
-
-
-

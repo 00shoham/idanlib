@@ -4,6 +4,7 @@ BIN=\
   http-get-test\
   json-parse-test\
   json-parse-test-2\
+  json-parse-test-3\
   print-env-from-cgi\
   regexp-test\
   sha-test\
@@ -13,11 +14,13 @@ BIN=\
 
 all: $(BIN)
 
+LUADIR=/usr/include/lua5.3
 UTILDIR=../src
 UTILSLIB=$(UTILDIR)/utils.a
+INCLUDES=-I$(LUADIR) -I$(UTILDIR)
 
 CC=gcc
-CFLAGS=-Wall -O2 -g -I$(UTILDIR)
+CFLAGS=-Wall -O2 -g $(INCLUDES)
 # CFLAGS=-Wall -g -rdynamic -fsanitize=address
 LIBS=-lm -lpthread -luuid
 
