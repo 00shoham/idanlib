@@ -462,3 +462,18 @@ void LuaFree( lua_State* L )
   if( L!=NULL )
     lua_close(L);
   }
+
+void LUALoadScript( lua_State *L, char* fileName )
+  {
+  /* read the lua code */
+  unsigned char* code = NULL;
+  long nBytes = FileRead( fileName, &code );
+  int err = luaL_loadbuffer( L, (char*)code, nBytes, fileName );
+  if( err )
+    Error( "Failed to load buffer from %s", fileName );
+
+  /* not sure why we need this, but it seems to help
+     with subsequent function calls */
+  if( lua_pcall( L, 0, 0, 0 ) ) /* prime the pump? */
+    Error( "Initial lua_pcall() failed");
+  }

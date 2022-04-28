@@ -16,5 +16,6 @@ int GetTableSizeFunction( lua_State* L );
 int LUAWebTransaction( lua_State* L );
 lua_State* LUAInit();
 void LuaFree( lua_State* L );
+void LUALoadScript( lua_State *L, char* fileName );
 
 #endif
