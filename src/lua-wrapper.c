@@ -456,3 +456,9 @@ lua_State* LUAInit()
 
   return L;
   }
+
+void LuaFree( lua_State* L )
+  {
+  if( L!=NULL )
+    lua_close(L);
+  }

@@ -15,5 +15,6 @@ int JSONToTable( lua_State* L );
 int GetTableSizeFunction( lua_State* L );
 int LUAWebTransaction( lua_State* L );
 lua_State* LUAInit();
+void LuaFree( lua_State* L );
 
 #endif
