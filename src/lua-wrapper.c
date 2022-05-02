@@ -470,10 +470,45 @@ void LUALoadScript( lua_State *L, char* fileName )
   long nBytes = FileRead( fileName, &code );
   int err = luaL_loadbuffer( L, (char*)code, nBytes, fileName );
   if( err )
-    Error( "Failed to load buffer from %s", fileName );
+    Error( "Failed to load buffer from %s - error %d - %s", fileName, err, lua_tostring(L,-1) );
 
   /* not sure why we need this, but it seems to help
      with subsequent function calls */
   if( lua_pcall( L, 0, 0, 0 ) ) /* prime the pump? */
     Error( "Initial lua_pcall() failed");
+  }
+
+/* The convention is to pass in a _TAG_VALUE* list of arguments, where
+   each argument has a name and a value (so not ordered, named!) and
+   to return a _TAG_VALUE* list of returns.  The caller has to free
+   the return value list */
+_TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args )
+  {
+  int err = 0;
+  if( L==NULL )
+    Error( "LUAFunctionCall with NULL lua_State" );
+
+  if( EMPTY( functionName ) )
+    Error( "LUAFunctionCall with no function name" );
+
+  if( lua_getglobal( L, functionName )<0 )
+    {
+    Warning( "Could not find function %s", functionName );
+    return NULL;
+    }
+
+  int nArgs = 0;
+  if( args!=NULL )
+    nArgs = TagValueTableOnLuaStack( L, args );
+
+  if( ( err = lua_pcall( L,
+                         nArgs /* args table */,
+                         1 /* results table */,
+                         0 /* no special errhandler */ ) ) )
+    Error( "luaL_pcall(%s) returned error %d - %s", functionName, err, lua_tostring(L,-1) );
+
+  _TAG_VALUE* response = LuaTableToTagValue( L );
+
+  lua_remove( L, -1 );
+  return response;
   }

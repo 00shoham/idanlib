@@ -17,5 +17,6 @@ int LUAWebTransaction( lua_State* L );
 lua_State* LUAInit();
 void LuaFree( lua_State* L );
 void LUALoadScript( lua_State *L, char* fileName );
+_TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args );
 
 #endif

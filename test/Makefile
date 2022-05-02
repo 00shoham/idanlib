@@ -5,6 +5,7 @@ BIN=\
   json-parse-test\
   json-parse-test-2\
   json-parse-test-3\
+  lua-test\
   print-env-from-cgi\
   regexp-test\
   sha-test\
@@ -22,7 +23,7 @@ INCLUDES=-I$(LUADIR) -I$(UTILDIR)
 CC=gcc
 CFLAGS=-Wall -O2 -g $(INCLUDES)
 # CFLAGS=-Wall -g -rdynamic -fsanitize=address
-LIBS=-lm -lpthread -luuid
+LIBS=-lm -lpthread -luuid -llua5.3 -lcurl
 
 ALLOBJ=\
   $(UTILSLIB)
