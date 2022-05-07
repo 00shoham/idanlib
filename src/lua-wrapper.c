@@ -426,6 +426,27 @@ int LUASleep( lua_State* L )
   return 0;
   }
 
+int LUANotice( lua_State* L )
+  {
+  if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
+    {
+    Warning( "LUANotice: Top of LUA stack is not a string" );
+    return 0;
+    }
+
+  const char* str = lua_tostring( L, -1 );
+  lua_remove( L, -1 );
+  if( EMPTY( str ) )
+    {
+    Warning( "%s: Cannot call Notice with empty string" );
+    return 0;
+    }
+
+  Notice( str );
+
+  return 0;
+  }
+
 lua_State* LUAInit()
   {
   lua_State *L = luaL_newstate();    /* opens Lua */
@@ -450,6 +471,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUASleep );
   lua_setglobal( L, "Sleep" );
+
+  lua_pushcfunction( L, LUANotice );
+  lua_setglobal( L, "Notice" );
 
   // load the libs
   luaL_openlibs(L);

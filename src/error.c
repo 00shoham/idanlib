@@ -18,7 +18,7 @@ char* parsingLocation = NULL;
     pthread_mutex_unlock( &errLock );\
     }
 
-void mysyslog( int level, char* prefix, char* msg )
+void mysyslog( int level, const char* prefix, const char* msg )
   {
   time_t tnow = time(NULL);
   struct tm *tmp = localtime( &tnow );
@@ -77,7 +77,7 @@ void mysyslog( int level, char* prefix, char* msg )
     }
   }
 
-void Error( char* fmt, ... )
+void Error( const char* fmt, ... )
   {
   va_list arglist;
   char buf[BIGBUF];
@@ -101,7 +101,7 @@ void Error( char* fmt, ... )
   exit(EXIT_FAILURE);
   }
 
-void APIError( char* methodName, int errorCode, char* fmt, ... )
+void APIError( const char* methodName, int errorCode, const char* fmt, ... )
   {
   va_list arglist;
   char errmsg[BUFLEN];
@@ -127,7 +127,7 @@ void APIError( char* methodName, int errorCode, char* fmt, ... )
   exit(1);
   }
 
-void Warning( char* fmt, ... )
+void Warning( const char* fmt, ... )
   {
   va_list arglist;
   char buf[BIGBUF];
@@ -140,7 +140,7 @@ void Warning( char* fmt, ... )
   return;
   }
 
-void Notice( char* fmt, ... )
+void Notice( const char* fmt, ... )
   {
   va_list arglist;
   char buf[BIGBUF];

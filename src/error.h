@@ -5,9 +5,9 @@ extern int useMutexInErrorReporting;
 extern FILE* logFileHandle;
 extern char* parsingLocation;
 
-void Error( char* fmt, ... );
-void APIError( char* methodName, int errorCode, char* fmt, ... );
-void Warning( char* fmt, ... );
-void Notice( char* fmt, ... );
+void Error( const char* fmt, ... );
+void APIError( const char* methodName, int errorCode, const char* fmt, ... );
+void Warning( const char* fmt, ... );
+void Notice( const char* fmt, ... );
 
 #endif
