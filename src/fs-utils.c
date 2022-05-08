@@ -360,8 +360,15 @@ char* SanitizeFilename( const char* path, const char* prefix, const char* fileNa
   char* dstPtr;
   char* endPtr = buf+BUFLEN-2;
 
-  strncpy( buf, path, sizeof(buf)-2 );
-  dstPtr = buf + strlen(buf);
+  dstPtr = buf;
+  *dstPtr = 0;
+
+  if( NOTEMPTY( path ) )
+    {
+    strncpy( buf, path, sizeof(buf)-2 );
+    dstPtr = buf + strlen(buf);
+    *dstPtr = 0;
+    }
 
   if( dstPtr > buf )
     {
