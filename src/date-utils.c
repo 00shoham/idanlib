@@ -178,3 +178,98 @@ time_t ParseTimeString( char* str )
   return -1;
   }
 
+int YearNow()
+  {
+  time_t tNow = time(NULL);
+  struct tm* tmPtr = localtime( &tNow );
+  return tmPtr->tm_year + 1900;
+  }
+
+int IsValidMMDD( char* value, _MMDD* date )
+  {
+  int m = -1;
+  int d = -1;
+  if( EMPTY( value ) )
+    return -1;
+
+  if( strcasecmp( value, "today" )==0 )
+    {
+    time_t tNow = time(NULL);
+    struct tm* tmPtr = localtime( &tNow );
+    m = tmPtr->tm_mon + 1;
+    d = tmPtr->tm_mday;
+    goto SET_DATE;
+    }
+
+  if( ! isdigit( value[0] )
+      || ! isdigit( value[1] )
+      || ( value[2] != '-' && value[2] != ':' )
+      || ! isdigit( value[3] )
+      || ! isdigit( value[4] )
+      || value[5]!=0 )
+    return -2;
+
+  m = 10 * (value[0] - '0') + (value[1] - '0');
+  d = 10 * (value[3] - '0') + (value[4] - '0');
+  if( m<1 || m>12 )
+    return -3;
+  if( d<1 || d>31 )
+    return -4;
+
+  SET_DATE:
+  if( date!=NULL )
+    {
+    date->year = YearNow();
+    date->month = m;
+    date->day = d;
+    }
+
+  return 0;
+  }
+
+int EmptyMMDD( _MMDD* date )
+  {
+  if( date==NULL )
+    return 0;  /* no date is an empty date */
+  if( date->year!=0
+      || date->month!=0
+      || date->day!=0 )
+    return -1;
+  return 0;
+  }
+
+time_t MMDDToTime( _MMDD* date )
+  {
+  if( date==NULL )
+    return time(NULL); /* why not? */
+
+  time_t tNow = time(NULL);
+  int Y=date->year;
+  int M=date->month;
+  int D=date->day;
+
+  struct tm *tmPtr = localtime( &tNow );
+  struct tm tStr;
+  memset( &tStr, 0, sizeof( tStr ) );
+  tStr.tm_year = Y - 1900;
+  tStr.tm_mon = M - 1;
+  tStr.tm_mday = D;
+  tStr.tm_hour = 2;
+  tStr.tm_min = 0;
+  tStr.tm_sec = 0;
+  tStr.tm_isdst = tmPtr->tm_isdst;
+  return mktime( &tStr );
+  }
+
+int TimeToMMDD( time_t t, _MMDD* date )
+  {
+  if( date==NULL )
+    return -1;
+
+  struct tm *tmPtr = localtime( &t );
+  date->year = tmPtr->tm_year + 1900;
+  date->month = tmPtr->tm_mon + 1;
+  date->day = tmPtr->tm_mday;
+
+  return 0;
+  }

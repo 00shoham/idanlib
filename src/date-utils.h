@@ -13,5 +13,18 @@ int ValidTime( char* when );
 int ValidDate( char* when );
 long long TimeInMicroSeconds();
 time_t ParseTimeString( char* str );
+int YearNow();
+
+typedef struct _mmdd
+  {
+  int year;
+  int month;
+  int day;
+  } _MMDD;
+
+int IsValidMMDD( char* value, _MMDD* date );
+int EmptyMMDD( _MMDD* date );
+time_t MMDDToTime( _MMDD* date );
+int TimeToMMDD( time_t t, _MMDD* date );
 
 #endif
