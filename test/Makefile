@@ -1,4 +1,5 @@
 BIN=\
+  proc-test\
   async-command-io-test\
   hextime\
   http-get-test\

@@ -38,7 +38,7 @@
 #define RE_BOOL "[01]"
 #define RE_POSINT "[0-9]+"
 #define RE_INTEGER "[-]?[0-9]+"
-#define RE_FLOAT "[0-9.]+"
+#define RE_FLOAT "[-]?[0-9.]+"
 #define RE_IDENTIFIER "[0-9a-zA-Z_.-]+"
 
 #define RE_DATE "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"

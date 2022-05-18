@@ -187,6 +187,7 @@ int YearNow()
 
 int IsValidMMDD( char* value, _MMDD* date )
   {
+  int y = -1;
   int m = -1;
   int d = -1;
   if( EMPTY( value ) )
@@ -201,20 +202,54 @@ int IsValidMMDD( char* value, _MMDD* date )
     goto SET_DATE;
     }
 
-  if( ! isdigit( value[0] )
-      || ! isdigit( value[1] )
-      || ( value[2] != '-' && value[2] != ':' )
-      || ! isdigit( value[3] )
-      || ! isdigit( value[4] )
-      || value[5]!=0 )
+  int isMMDD = 0;
+  if( isdigit( value[0] )
+      && isdigit( value[1] )
+      && ( value[2] == '-' || value[2] == ':' )
+      && isdigit( value[3] )
+      && isdigit( value[4] )
+      && value[5]==0 )
+    isMMDD = 1;
+
+  int isCCYYMMDD = 0;
+  if( isdigit( value[0] )
+      && isdigit( value[1] )
+      && isdigit( value[2] )
+      && isdigit( value[3] )
+      && ( value[4] == '-' || value[4] == ':' )
+      && isdigit( value[5] )
+      && isdigit( value[6] )
+      && ( value[7] == '-' || value[7] == ':' )
+      && isdigit( value[8] )
+      && isdigit( value[9] )
+      && value[10]==0 )
+    isCCYYMMDD = 1;
+
+  if( isMMDD==0 && isCCYYMMDD==0 )
     return -2;
 
-  m = 10 * (value[0] - '0') + (value[1] - '0');
-  d = 10 * (value[3] - '0') + (value[4] - '0');
-  if( m<1 || m>12 )
+  if( isMMDD )
+    {
+    y = YearNow();
+    m = 10 * (value[0] - '0') + (value[1] - '0');
+    d = 10 * (value[3] - '0') + (value[4] - '0');
+    }
+  else
+    {
+    y =  1000 * (value[0]-'0')
+      +   100 * (value[1]-'0')
+      +    10 * (value[2]-'0')
+      +         (value[3]-'0');
+    m = 10 * (value[5]-'0') + value[6]-'0';
+    d = 10 * (value[8]-'0') + value[9]-'0';
+    }
+
+  if( y<2000 || y>2037 )
     return -3;
-  if( d<1 || d>31 )
+  if( m<1 || m>12 )
     return -4;
+  if( d<1 || d>31 )
+    return -5;
 
   SET_DATE:
   if( date!=NULL )
