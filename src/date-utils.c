@@ -309,3 +309,9 @@ int TimeToMMDD( time_t t, _MMDD* date )
 
   return 0;
   }
+
+int DayOfWeek( time_t t )
+  {
+  struct tm *tmPtr = localtime( &t );
+  return tmPtr->tm_wday;
+  }

@@ -14,6 +14,7 @@ int ValidDate( char* when );
 long long TimeInMicroSeconds();
 time_t ParseTimeString( char* str );
 int YearNow();
+int DayOfWeek( time_t t );
 
 typedef struct _mmdd
   {
