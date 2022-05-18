@@ -197,6 +197,7 @@ int IsValidMMDD( char* value, _MMDD* date )
     {
     time_t tNow = time(NULL);
     struct tm* tmPtr = localtime( &tNow );
+    y = tmPtr->tm_year + 1900;
     m = tmPtr->tm_mon + 1;
     d = tmPtr->tm_mday;
     goto SET_DATE;
@@ -254,7 +255,7 @@ int IsValidMMDD( char* value, _MMDD* date )
   SET_DATE:
   if( date!=NULL )
     {
-    date->year = YearNow();
+    date->year = y;
     date->month = m;
     date->day = d;
     }
