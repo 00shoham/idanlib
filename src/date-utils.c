@@ -231,7 +231,7 @@ int IsValidMMDD( char* value, _MMDD* date )
 
   if( isMMDD )
     {
-    y = YearNow();
+    y = 0;
     m = 10 * (value[0] - '0') + (value[1] - '0');
     d = 10 * (value[3] - '0') + (value[4] - '0');
     }
@@ -245,8 +245,11 @@ int IsValidMMDD( char* value, _MMDD* date )
     d = 10 * (value[8]-'0') + value[9]-'0';
     }
 
-  if( y<2000 || y>2037 )
-    return -3;
+  if( y!=0 )
+    {
+    if( y<2000 || y>2037 )
+      return -3;
+    }
   if( m<1 || m>12 )
     return -4;
   if( d<1 || d>31 )
