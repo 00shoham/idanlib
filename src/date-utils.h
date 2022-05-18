@@ -1,6 +1,8 @@
 #ifndef _INCLUDE_DATE_UTILS
 #define _INCLUDE_DATE_UTILS
 
+#define DAY_IN_SECONDS 24 * 60 * 60;
+
 int IsRecent( time_t when, int maxAgeSeconds );
 char* DateStr( time_t t, char* buf, int bufLen );
 char* DateNow( char* buf, int bufLen );
