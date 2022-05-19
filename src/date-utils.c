@@ -318,3 +318,14 @@ int DayOfWeek( time_t t )
   struct tm *tmPtr = localtime( &t );
   return tmPtr->tm_wday;
   }
+
+int NumberOfDays( _MMDD* first, _MMDD* last )
+  {
+  time_t tStart = MMDDToTime( first );
+  time_t tFinish = MMDDToTime( last );
+  int nDays = (tFinish - tStart);
+  nDays /= DAY_IN_SECONDS;
+  ++nDays;
+
+  return nDays;
+  }

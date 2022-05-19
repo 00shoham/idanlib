@@ -29,5 +29,6 @@ int IsValidMMDD( char* value, _MMDD* date );
 int EmptyMMDD( _MMDD* date );
 time_t MMDDToTime( _MMDD* date );
 int TimeToMMDD( time_t t, _MMDD* date );
+int NumberOfDays( _MMDD* first, _MMDD* last );
 
 #endif
