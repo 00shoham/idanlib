@@ -285,8 +285,6 @@ time_t MMDDToTime( _MMDD* date )
   time_t tNow = time(NULL);
   int Y=date->year;
 
-  if( Y == 0 )
-    Y = YearNow();
   int M=date->month;
   int D=date->day;
 
