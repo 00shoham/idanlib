@@ -1,7 +1,7 @@
 #ifndef _INCLUDE_DATE_UTILS
 #define _INCLUDE_DATE_UTILS
 
-#define DAY_IN_SECONDS 24 * 60 * 60;
+#define DAY_IN_SECONDS 24 * 60 * 60
 
 int IsRecent( time_t when, int maxAgeSeconds );
 char* DateStr( time_t t, char* buf, int bufLen );
@@ -30,5 +30,6 @@ int EmptyMMDD( _MMDD* date );
 time_t MMDDToTime( _MMDD* date );
 int TimeToMMDD( time_t t, _MMDD* date );
 int NumberOfDays( _MMDD* first, _MMDD* last );
+int NumberOfMonths( _MMDD* first, _MMDD* last );
 
 #endif
