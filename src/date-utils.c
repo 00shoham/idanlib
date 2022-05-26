@@ -322,6 +322,18 @@ int DayOfWeek( time_t t )
   return tmPtr->tm_wday;
   }
 
+int YearFromTime( time_t t )
+  {
+  struct tm *tmPtr = localtime( &t );
+  return tmPtr->tm_year + 1900;
+  }
+
+int MonthFromTime( time_t t )
+  {
+  struct tm *tmPtr = localtime( &t );
+  return tmPtr->tm_mon + 1;
+  }
+
 int NumberOfDays( _MMDD* first, _MMDD* last )
   {
   time_t tStart = MMDDToTime( first );
@@ -331,4 +343,23 @@ int NumberOfDays( _MMDD* first, _MMDD* last )
   ++nDays;
 
   return nDays;
+  }
+
+int NumberOfMonths( _MMDD* first, _MMDD* last )
+  {
+  time_t tStart = MMDDToTime( first );
+  time_t tFinish = MMDDToTime( last );
+  int nMonths = 0;
+  int lastMonth = -1;
+  for( time_t t = tStart; t<=tFinish; t += DAY_IN_SECONDS )
+    {
+    int m = MonthFromTime( t );
+    if( m != lastMonth )
+      {
+      ++ nMonths;
+      lastMonth = m;
+      }
+    }
+
+  return nMonths;
   }
