@@ -319,6 +319,12 @@ int DayOfWeek( time_t t )
   return tmPtr->tm_wday;
   }
 
+int YearFromTime( time_t t )
+  {
+  struct tm *tmPtr = localtime( &t );
+  return tmPtr->tm_year + 1900;
+  }
+
 int MonthFromTime( time_t t )
   {
   struct tm *tmPtr = localtime( &t );

@@ -30,6 +30,8 @@ int EmptyMMDD( _MMDD* date );
 time_t MMDDToTime( _MMDD* date );
 int TimeToMMDD( time_t t, _MMDD* date );
 int NumberOfDays( _MMDD* first, _MMDD* last );
+int MonthFromTime( time_t t );
+int YearFromTime( time_t t );
 int NumberOfMonths( _MMDD* first, _MMDD* last );
 
 #endif
