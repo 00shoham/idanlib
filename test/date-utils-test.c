@@ -17,6 +17,11 @@ void Test( int y1, int m1, int d1,
 
   printf( "Number of days from %04d-%02d-%02d to %04d-%02d-%02d is %d\n",
           y1, m1, d1, y2, m2, d2, n );
+
+  int m = NumberOfMonths( &date1, &date2 );
+
+  printf( "Number of months from %04d-%02d-%02d to %04d-%02d-%02d is %d\n",
+          y1, m1, d1, y2, m2, d2, m );
   }
 
 int main()
