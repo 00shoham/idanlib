@@ -1,4 +1,5 @@
 BIN=\
+  date-utils-test\
   proc-test\
   async-command-io-test\
   hextime\
