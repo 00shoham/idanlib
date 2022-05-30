@@ -336,7 +336,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     int wStatus;
     if( waitpid( child, &wStatus, WNOHANG )==-1 )
       {
-      Notice( "waitpid returned -1 (error.  errno=%d/%s).", errno, strerror( errno ));
+      Warning( "waitpid returned -1 (error.  errno=%d/%s).", errno, strerror( errno ));
       retVal = -1;
       break;
       }
