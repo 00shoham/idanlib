@@ -529,7 +529,11 @@ _TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args 
                          nArgs /* args table */,
                          1 /* results table */,
                          0 /* no special errhandler */ ) ) )
-    Error( "luaL_pcall(%s) returned error %d - %s", functionName, err, lua_tostring(L,-1) );
+    {
+    Warning( "luaL_pcall(%s) returned error %d - %s", functionName, err, lua_tostring(L,-1) );
+    lua_remove( L, -1 );
+    return NULL;
+    }
 
   _TAG_VALUE* response = LuaTableToTagValue( L );
 
