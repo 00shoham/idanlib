@@ -24,11 +24,20 @@ void Test( int y1, int m1, int d1,
           y1, m1, d1, y2, m2, d2, m );
   }
 
+void LeapTest()
+  {
+  for( int i=1990; i<2600; ++i )
+    printf( "%d --> %s\n", i, IsLeapYear(i)==0 ? "LEAP" : "REGULAR" );
+  }
+
 int main()
   {
   Test( 2022, 5, 26, 2022, 5, 26 );
   Test( 2022, 5, 26, 2023, 5, 26 );
   Test( 2022, 5, 26, 2025, 5, 26 );
   Test( 2022, 5, 26, 2025, 5, 1 );
+
+  printf( "\n\nLeap year test:\n" );
+  LeapTest();
   return 0;
   }

@@ -34,4 +34,7 @@ int MonthFromTime( time_t t );
 int YearFromTime( time_t t );
 int NumberOfMonths( _MMDD* first, _MMDD* last );
 
+int IsLeapYear( int ccyy );
+int DaysInMonth( int ccyy, int mon );
+
 #endif

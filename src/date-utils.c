@@ -361,3 +361,25 @@ int NumberOfMonths( _MMDD* first, _MMDD* last )
 
   return nMonths;
   }
+
+int defaultDaysInMonths[] = { 31, 28, 31,
+                              30, 31, 30,
+                              31, 31, 30,
+                              31, 30, 31 };
+
+int IsLeapYear( int ccyy )
+  {
+  if( (ccyy%4 == 0) && ( (ccyy%400 == 0) || (ccyy%100 != 0) ) )
+    return 0;
+  else
+    return -1;
+  }
+
+int DaysInMonth( int ccyy, int mon )
+  {
+  if( mon==2 && IsLeapYear( ccyy )==0 )
+    return 29;
+  if( mon>=1 && mon<=12 )
+    return defaultDaysInMonths[ mon - 1 ];
+  return -1;
+  }
