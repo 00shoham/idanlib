@@ -495,6 +495,7 @@ void LUALoadScript( lua_State *L, char* fileName )
   int err = luaL_loadbuffer( L, (char*)code, nBytes, fileName );
   if( err )
     Error( "Failed to load buffer from %s - error %d - %s", fileName, err, lua_tostring(L,-1) );
+  FREE( code );
 
   /* not sure why we need this, but it seems to help
      with subsequent function calls */
@@ -530,7 +531,7 @@ _TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args 
                          1 /* results table */,
                          0 /* no special errhandler */ ) ) )
     {
-    Warning( "luaL_pcall(%s) returned error %d - %s", functionName, err, lua_tostring(L,-1) );
+    Warning( "lua_pcall(%s) returned error %d - %s", functionName, err, lua_tostring(L,-1) );
     lua_remove( L, -1 );
     return NULL;
     }
