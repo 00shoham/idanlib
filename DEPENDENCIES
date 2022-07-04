@@ -1,0 +1,14 @@
+This library has a handful of dependencies.
+
+On an Ubuntu system, you satisfy them as follows:
+
+apt install libcurl4-gnutls-dev liblua5.3-dev uuid-dev
+
+They are:
+
+  * libcurl - used to fetch content from web sites, with support
+    for https, proxies, etc.
+
+  * lua - used for running simple scripts at runtime.
+
+  * uuid - used to generate globally unique identifiers.
