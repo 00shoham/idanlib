@@ -23,7 +23,7 @@ utils.a: $(OBJ)
 
 LUADIR=/usr/include/lua5.3
 INCLUDES=-I$(LUADIR)
-CFLAGS=-Wall -O2 -g $(INCLUDES)
+CFLAGS=-Wall -O2 $(INCLUDES)
 # CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
 CC=gcc $(CFLAGS)
 
