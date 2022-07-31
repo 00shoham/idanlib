@@ -36,5 +36,6 @@ int NumberOfMonths( _MMDD* first, _MMDD* last );
 
 int IsLeapYear( int ccyy );
 int DaysInMonth( int ccyy, int mon );
+int SameDay( _MMDD* d1, _MMDD* d2 );
 
 #endif
