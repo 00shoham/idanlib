@@ -21,7 +21,7 @@ OBJ=\
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
 
-LUADIR := $(shell /usr/bin/find /usr/include -type d -name 'lua*')
+LUADIR := $(shell /usr/bin/find /usr/include -type d -name 'lua*' | sort | tail -1)
 LUAPARTS := $(subst /, ,$(LUADIR))
 LUAVER := $(lastword $(LUAPARTS))
 INCLUDES=-I$(LUADIR)
