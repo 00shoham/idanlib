@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#define DEBUG 1
+
 const char* LuaTypeName( int type )
   {
   switch( type )
@@ -398,6 +400,12 @@ int LUAWebTransaction( lua_State* L )
     }
   else
     {
+#ifdef DEBUG
+    Notice( "LUA WebTransaction().  URL=%s POST_DATA=[%s] retVal=200/OK retData=[%s]",
+            NULLPROTECT( url ),
+            NULLPROTECT( postData ),
+            NULLPROTECT( (char*)d.data ) );
+#endif
     lua_pushstring( L, (char*)d.data );
     FreeData( &d);
     return 1;
