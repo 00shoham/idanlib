@@ -518,7 +518,7 @@ int GetAvailableSpaceOnVolume( char* path, char* buf, int bufLen )
     }
 
   size_t n = fread( buf, sizeof(char), bufLen, dfH );
-  fclose( dfH );
+  pclose( dfH );
   if( n>0 && n<bufLen-1 )
     {
     buf[n] = 0;
