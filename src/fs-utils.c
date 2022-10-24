@@ -119,7 +119,7 @@ long FileSize2( const char* folder, const char* fileName )
   }
 
 /* Check if a directory exists and can be opened.
- * Return 1 if true; 0 otherwise.
+ * Return 0 if it exists; some other number (like -1) otherwise.
  */
 int DirExists( const char* path )
   {
