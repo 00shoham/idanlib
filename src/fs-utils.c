@@ -513,7 +513,7 @@ int GetAvailableSpaceOnVolume( char* path, char* buf, int bufLen )
   FILE* dfH = popen( cmd, "r" );
   if( dfH==NULL )
     {
-    Warning( "Failed to popen(%s)", cmd );
+    Warning( "Failed to popen(%s) - %d %s", cmd, errno, strerror( errno ) );
     return -3;
     }
 
@@ -684,7 +684,7 @@ void EnsureDirExists( char* path )
     int err = mkdir( path, 0755 );
     if( err!=0 )
       {
-      Error( "Failed to create folder [%s]", path );
+      Error( "Failed to create folder [%s] - %d %s", path, errno, strerror(errno) );
       }
     }
   }
@@ -873,7 +873,7 @@ int Touch( char* path )
     return 0;
     }
   else
-    Warning( "Failed to fopen(%s,a)", path );
+    Warning( "Failed to fopen(%s,a) - %d %s", path, errno, strerror( errno ) );
 
   return -1;
   }
