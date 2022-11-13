@@ -119,7 +119,7 @@ long FileSize2( const char* folder, const char* fileName )
   }
 
 /* Check if a directory exists and can be opened.
- * Return 1 if true; 0 otherwise.
+ * Return 0 if it exists; some other number (like -1) otherwise.
  */
 int DirExists( const char* path )
   {
@@ -513,7 +513,7 @@ int GetAvailableSpaceOnVolume( char* path, char* buf, int bufLen )
   FILE* dfH = popen( cmd, "r" );
   if( dfH==NULL )
     {
-    Warning( "Failed to popen(%s)", cmd );
+    Warning( "Failed to popen(%s) - %d %s", cmd, errno, strerror( errno ) );
     return -3;
     }
 
@@ -684,7 +684,7 @@ void EnsureDirExists( char* path )
     int err = mkdir( path, 0755 );
     if( err!=0 )
       {
-      Error( "Failed to create folder [%s]", path );
+      Error( "Failed to create folder [%s] - %d %s", path, errno, strerror(errno) );
       }
     }
   }
@@ -873,7 +873,7 @@ int Touch( char* path )
     return 0;
     }
   else
-    Warning( "Failed to fopen(%s,a)", path );
+    Warning( "Failed to fopen(%s,a) - %d %s", path, errno, strerror( errno ) );
 
   return -1;
   }
