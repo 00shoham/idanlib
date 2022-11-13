@@ -953,3 +953,81 @@ _TAG_VALUE* AppendValue( char* buf, _TAG_VALUE* workingHeaders )
   return workingHeaders;
   } 
 
+_TAG_VALUE* AppendTagValue( _TAG_VALUE* list, _TAG_VALUE* newItem )
+  {
+  if( list==NULL )
+    return newItem;
+
+  _TAG_VALUE** ptr = NULL;
+  for( ptr = &list; ptr!=NULL && *ptr!=NULL; ptr = &( (*ptr)->next ) )
+    {}
+
+  if( ptr!=NULL && *ptr==NULL )
+    {
+    *ptr = newItem;
+    return list;
+    }
+
+  Error( "Failed to append item to tag-value list" );
+  return NULL;
+  }
+
+_TAG_VALUE* ExtractValueFromPath( _TAG_VALUE* tree, _TAG_VALUE* path )
+  {
+  for( _TAG_VALUE* step = path; step!=NULL; step=step->next )
+    {
+    int isTerminal = step->next==NULL ? 1 : 0;
+
+    if( step->type==VT_STR )
+      {
+      int foundIt = 0;
+      for( _TAG_VALUE* item=tree; item!=NULL; item=item->next )
+        {
+        if( NOTEMPTY( item->tag )
+            && NOTEMPTY( step->value )
+            && strcasecmp( item->tag, step->value )==0 )
+          {
+          if( isTerminal )
+            return item;
+          
+          tree = item->subHeaders;
+          foundIt = 1;
+          break;
+          }
+        }
+      if( foundIt==0 )
+        {
+        Warning( "Failed to find item labeled %s", step->value );
+        return NULL;
+        }
+      }
+    else if( step->type==VT_INT )
+      {
+      int i = 0;
+      _TAG_VALUE* item = tree;
+      int foundIt = 0;
+      for( ; item!=NULL; item=item->next, ++i )
+        {
+        if( i==step->iValue )
+          {
+          if( isTerminal )
+            return item;
+          
+          tree = item->subHeaders;
+          foundIt = 1;
+          break;
+          }
+        }
+      if( foundIt==0 )
+        {
+        Warning( "Failed to find item at position %d", step->iValue );
+        return NULL;
+        }
+      }
+    else
+      Error( "Only expecting STR or INT steps in path" );
+    }
+
+  Error( "Failed to find item at path specified" );
+  return NULL;
+  }

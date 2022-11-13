@@ -46,5 +46,8 @@ _TAG_VALUE* TagIntList( char* placeHolderPtr, ... );
 
 char* AggregateMessages( _TAG_VALUE* messages );
 
+_TAG_VALUE* AppendTagValue( _TAG_VALUE* list, _TAG_VALUE* newItem );
+_TAG_VALUE* ExtractValueFromPath( _TAG_VALUE* tree, _TAG_VALUE* path );
+
 #endif
 
