@@ -1031,3 +1031,88 @@ _TAG_VALUE* ExtractValueFromPath( _TAG_VALUE* tree, _TAG_VALUE* path )
   Error( "Failed to find item at path specified" );
   return NULL;
   }
+
+#define QUOTE '"'
+#define COMMA ','
+#define BACKSLASH '\\'
+
+enum pState
+  {
+  ps_item_scan,
+  ps_quoted_value,
+  ps_int_value,
+  ps_pre_comma
+  };
+
+_TAG_VALUE* ParsePath( char* textPath )
+  {
+  _TAG_VALUE* path = NULL;
+
+  enum pState state = ps_item_scan;
+  char* string = NULL;
+  for( char* ptr = textPath; *ptr!=0; ++ptr )
+    {
+    int c = *ptr;
+    switch( state )
+      {
+      case ps_item_scan:
+        if( c==QUOTE )
+          {
+          string = ptr+1;
+          state = ps_quoted_value;
+          }
+        else if( isdigit( c ) )
+          {
+          string = ptr;
+          state = ps_int_value;
+          }
+        else if( isspace( c ) )
+          {}
+        else
+          Error( "State @ %s is ps_item_scan but not a quote or digit", ptr );
+        break;
+
+      case ps_quoted_value:
+        if( c==QUOTE )
+          {
+          char buf[BUFLEN];
+          strncpy( buf, string, ptr-string );
+          buf[ptr-string] = 0;
+          _TAG_VALUE* newOne = NewTagValue( "string", buf, NULL, 0 );
+          path = AppendTagValue( path, newOne );
+          state = ps_pre_comma;
+          }
+        else if( c==BACKSLASH )
+          {
+          ++ptr;
+          }
+        break;
+
+      case ps_int_value:
+        if( ! isdigit( c ) )
+          {
+          char buf[BUFLEN];
+          strncpy( buf, string, ptr-string );
+          buf[ptr-string] = 0;
+          int iVal = atoi(buf);
+          _TAG_VALUE* newOne = NewTagValueInt( "Int", iVal, NULL, 0 );
+          path = AppendTagValue( path, newOne );
+          if( c==COMMA )
+            state = ps_item_scan;
+          else
+            state = ps_pre_comma;
+          }
+        break;
+
+      case ps_pre_comma:
+        if( c==COMMA )
+          state = ps_item_scan;
+        break;
+
+      default:
+        Error( "Weird state in parser" );
+      }
+    }
+
+  return path;
+  }
