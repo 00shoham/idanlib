@@ -162,6 +162,7 @@ _TAG_VALUE* ParseJSON( const char* string )
   {
   enum parser_state state = PS_PRE_OPENBR;
   _TAG_VALUE* list = NULL;
+  _TAG_VALUE* last = NULL;
   char* tag = NULL;
   char* value = NULL;
 
@@ -242,7 +243,8 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
-          list = NewTagValueList( NULL, ParseJSON( inBR ), list, 0 );
+          last = NewTagValueList( NULL, ParseJSON( inBR ), NULL, 0 );
+          list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
           free( inBR );
           inBR = NULL;
@@ -269,7 +271,8 @@ _TAG_VALUE* ParseJSON( const char* string )
         else if( c==QUOTE && ! backSlashStatus )
           {
           *ptr = 0;
-          list = NewTagValueGuessType( NULL, value, list, 0 );
+          last = NewTagValueGuessType( NULL, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           state = PS_IN_LIST_PRE_COMMA;
           }
         break;
@@ -279,21 +282,29 @@ _TAG_VALUE* ParseJSON( const char* string )
           {
           *ptr = 0;
           if( NOTEMPTY( value ) && strcasecmp( value, "NULL" )==0 )
-            list = NewTagValueNull( NULL, list, 0 );
+            {
+            last = NewTagValueNull( NULL, NULL, 0 );
+            list = AppendTagValue( list, last );
+            }
           else
-            list = NewTagValueGuessType( NULL, value, list, 0 );
+            {
+            last = NewTagValueGuessType( NULL, value, NULL, 0 );
+            list = AppendTagValue( list, last );
+            }
           state = PS_IN_LIST_PRE_COMMA;
           }
         else if( c==COMMA )
           {
           *ptr = 0;
-          list = NewTagValueGuessType( NULL, value, list, 0 );
+          last = NewTagValueGuessType( NULL, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           state = PS_PRE_LIST;
           }
         else if( c==CLOSESQ )
           {
           *ptr = 0;
-          list = NewTagValueGuessType( NULL, value, list, 0 );
+          last = NewTagValueGuessType( NULL, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           /* QQQ if we have a tag, make the list its value. */
           state = PS_IN_PAIR_PRE_COMMA;
           }
@@ -371,7 +382,8 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
-          list = NewTagValueList( tag, ParseJSON( inBR ), list, 0 );
+          last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
+          list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
           free( inBR );
           inBR = NULL;
@@ -386,7 +398,8 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
-          list = NewTagValueList( tag, ParseJSON( inBR ), list, 0 );
+          last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
+          list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
           free( inBR );
           inBR = NULL;
@@ -405,20 +418,28 @@ _TAG_VALUE* ParseJSON( const char* string )
           *ptr = 0;
           state = PS_IN_PAIR_PRE_COMMA;
           if( NOTEMPTY( value ) && strcasecmp( value, "NULL" )==0 )
-            list = NewTagValueNull( NULL, list, 0 );
+            {
+            last = NewTagValueNull( NULL, NULL, 0 );
+            list = AppendTagValue( list, last );
+            }
           else
-            list = NewTagValueGuessType( tag, value, list, 0 );
+            {
+            last = NewTagValueGuessType( tag, value, NULL, 0 );
+            list = AppendTagValue( list, last );
+            }
           }
         else if( c==COMMA )
           {
           *ptr = 0;
           state = PS_PRE_PAIR;
-          list = NewTagValueGuessType( tag, value, list, 0 );
+          last = NewTagValueGuessType( tag, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           }
         else if( c==CLOSEBR )
           {
           *ptr = 0;
-          list = NewTagValueGuessType( tag, value, list, 0 );
+          last = NewTagValueGuessType( tag, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           state = PS_PRE_OPENBR;
           }
         break;
@@ -431,7 +452,8 @@ _TAG_VALUE* ParseJSON( const char* string )
         else if( c==QUOTE && ! backSlashStatus )
           {
           *ptr = 0;
-          list = NewTagValue( tag, value, list, 0 );
+          last = NewTagValue( tag, value, NULL, 0 );
+          list = AppendTagValue( list, last );
           state = PS_IN_PAIR_PRE_COMMA;
           }
         break;
