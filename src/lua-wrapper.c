@@ -303,6 +303,7 @@ int LUAWebTransaction( lua_State* L )
   char* url = GetTagValue( tv, "URL" );
   if( EMPTY( url ) )
     {
+    FreeTagValue( tv );
     Warning( "%s: URL not set", me );
     return 0;
     }
@@ -318,6 +319,7 @@ int LUAWebTransaction( lua_State* L )
     else
       {
       Warning( "%s: METHOD must be GET|POST", me );
+      FreeTagValue( tv );
       return 0;
       }
     }
@@ -378,6 +380,8 @@ int LUAWebTransaction( lua_State* L )
   _DATA d = { 0, NULL, NULL };
   char* errMsg = NULL;
 
+  FreeTagValue( tv );
+
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
                     postData, 0, postContentType,          /* postData, postBinLen */
@@ -434,6 +438,175 @@ int LUASleep( lua_State* L )
   return 0;
   }
 
+int LUATailFile( lua_State* L )
+  {
+  char* me = "LUATailFile";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* fileName = GetTagValue( tv, "filename" );
+  if( EMPTY( fileName ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: filename not set", me );
+    return 0;
+    }
+
+  int nLines = GetTagValueInt( tv, "nlines" );
+  if( nLines<1 )
+    nLines = (int)GetTagValueDouble( tv, "nlines" );
+
+  if( nLines<1 )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: nlines not set", me );
+    return 0;
+    }
+
+  if( nLines>100 )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: nlines too large (max 100)", me );
+    return 0;
+    }
+
+  FILE* f = fopen( fileName, "r" );
+  if( f==NULL )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: could not open %s", me, fileName );
+    return 0;
+    }
+
+  FreeTagValue( tv );
+
+  char buf[BUFLEN];
+  TailFile( f, nLines, buf, sizeof(buf)-1 );
+  fclose( f );
+
+  if( strlen(buf)>0 )
+    {
+    lua_pushstring( L, (char*)buf );
+    return 1;
+    }
+
+  Warning( "%s: empty result", me );
+  return 0;
+  }
+
+int LUAHexStringToNumber( lua_State* L )
+  {
+  char* me = "LUAHexStringToNumber";
+  if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a string", me );
+    return 0;
+    }
+
+  const char* str = lua_tostring( L, -1 );
+  lua_remove( L, -1 );
+
+  if( EMPTY( str ) )
+    {
+    Warning( "%s: Cannot call HexStringToNumber with empty string" );
+    return 0;
+    }
+
+  long x;
+  if( sscanf( str, "%lx", &x )==1 )
+    {
+    lua_pushnumber( L, x );
+    return 1;
+    }
+
+  Warning( "Failed to get a number from %s", str );
+  return 0;
+  }
+
+int LUARegExExtract( lua_State* L )
+  {
+  char* me = "LUARegExExtract";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* string = GetTagValue( tv, "string" );
+  if( EMPTY( string ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: string not set", me );
+    return 0;
+    }
+
+  char* pattern = GetTagValue( tv, "pattern" );
+  if( EMPTY( pattern ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: pattern not set", me );
+    return 0;
+    }
+
+  char* result = ExtractRegexFromString( pattern, string );
+
+  if( EMPTY( result ) )
+    {
+    lua_pushstring( L, "" );
+    if( result!=NULL )
+      free( result );
+    }
+  else
+    {
+    printf( "RegExExtract( str=%s, pat=%s ) --> [%s]\n", string, pattern, result );
+    lua_pushstring( L, result );
+    }
+  FreeTagValue( tv );
+
+  return 1;
+  }
+
+int LUARegExMatch( lua_State* L )
+  {
+  char* me = "LUARegExMatch";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* string = GetTagValue( tv, "string" );
+  if( EMPTY( string ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: string not set", me );
+    return 0;
+    }
+
+  char* pattern = GetTagValue( tv, "pattern" );
+  if( EMPTY( pattern ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: pattern not set", me );
+    return 0;
+    }
+
+  int result = StringMatchesRegex( pattern, string );
+  FreeTagValue( tv );
+  lua_pushnumber( L, result );
+
+  return 1;
+  }
+
 int LUANotice( lua_State* L )
   {
   if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
@@ -482,6 +655,18 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUANotice );
   lua_setglobal( L, "Notice" );
+
+  lua_pushcfunction( L, LUATailFile );
+  lua_setglobal( L, "TailFile" );
+
+  lua_pushcfunction( L, LUAHexStringToNumber );
+  lua_setglobal( L, "HexStringToNumber" );
+
+  lua_pushcfunction( L, LUARegExExtract );
+  lua_setglobal( L, "RegExExtract" );
+
+  lua_pushcfunction( L, LUARegExMatch );
+  lua_setglobal( L, "RegExMatch" );
 
   // load the libs
   luaL_openlibs(L);
