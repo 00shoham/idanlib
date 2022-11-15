@@ -685,10 +685,13 @@ void LUALoadScript( lua_State *L, char* fileName )
   /* read the lua code */
   unsigned char* code = NULL;
   long nBytes = FileRead( fileName, &code );
-  int err = luaL_loadbuffer( L, (char*)code, nBytes, fileName );
-  if( err )
-    Error( "Failed to load buffer from %s - error %d - %s", fileName, err, lua_tostring(L,-1) );
-  FREE( code );
+  if( nBytes>0 )
+    {
+    int err = luaL_loadbuffer( L, (char*)code, nBytes, fileName );
+    if( err )
+      Error( "Failed to load buffer from %s - error %d - %s", fileName, err, lua_tostring(L,-1) );
+    FREE( code );
+    }
 
   /* not sure why we need this, but it seems to help
      with subsequent function calls */
