@@ -303,8 +303,8 @@ int LUAWebTransaction( lua_State* L )
   char* url = GetTagValue( tv, "URL" );
   if( EMPTY( url ) )
     {
-    FreeTagValue( tv );
     Warning( "%s: URL not set", me );
+    FreeTagValue( tv );
     return 0;
     }
 
