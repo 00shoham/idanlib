@@ -7,7 +7,7 @@ int main( int argc, char** argv )
   FILE* f = popen( "tail -n 1 canmore-main.json", "r" );
   if( f==NULL ) Error( "Cannot run tail cmd" );
   if( fgets( json, sizeof(json)-1, f )!=json ) Error( "Cannot read from tail" );
-  fclose( f );
+  pclose( f );
 
   char* ptr = NULL;
   char* thermostatID = strtok_r( json, " ", &ptr );

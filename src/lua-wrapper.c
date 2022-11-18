@@ -380,8 +380,7 @@ int LUAWebTransaction( lua_State* L )
   _DATA d = { 0, NULL, NULL };
   char* errMsg = NULL;
 
-  FreeTagValue( tv );
-
+  Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
                     postData, 0, postContentType,          /* postData, postBinLen */
@@ -396,10 +395,12 @@ int LUAWebTransaction( lua_State* L )
                     &errMsg
                     );
                          
+  Notice( "WebTransaction: return = %d", (int)err );
   if( err != CURLE_OK )
     {
     Warning( "%s: CURL says - %s", me, errMsg );
     FreeData( &d);
+    FreeTagValue( tv );
     return 0;
     }
   else
@@ -412,6 +413,7 @@ int LUAWebTransaction( lua_State* L )
 #endif
     lua_pushstring( L, (char*)d.data );
     FreeData( &d);
+    FreeTagValue( tv );
     return 1;
     }
   }
@@ -483,11 +485,11 @@ int LUATailFile( lua_State* L )
     return 0;
     }
 
-  FreeTagValue( tv );
-
   char buf[BUFLEN];
   TailFile( f, nLines, buf, sizeof(buf)-1 );
   fclose( f );
+
+  FreeTagValue( tv );
 
   if( strlen(buf)>0 )
     {
