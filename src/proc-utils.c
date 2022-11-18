@@ -40,6 +40,8 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     NARGV* args = nargv_parse( cmd );
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
@@ -125,6 +127,8 @@ int POpenAndReadWrite( const char* cmd, int* readFD, int* writeFD, pid_t* child 
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     NARGV* args = nargv_parse( cmd );
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
@@ -173,6 +177,8 @@ int POpenAndWrite( const char *cmd, int* writePtr, pid_t* childPtr )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     NARGV* args = nargv_parse( cmd );
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
@@ -631,6 +637,8 @@ int AsyncRunCommandNoIO( char* cmd )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     close( 0 );
     close( 1 );
     close( 2 );
@@ -658,6 +666,8 @@ int SyncRunCommandNoIO( char* cmd )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     close( 0 );
     close( 1 );
     close( 2 );
@@ -711,6 +721,8 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     close( 0 );
     dup2( readFD, 0 );
     close( writeFD );
@@ -792,6 +804,8 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     close( 0 );
     dup2( readFD, 0 );
     close( writeFD );
@@ -875,6 +889,8 @@ int SyncRunShellNoIO( char* cmd )
 
   if( pid == 0 ) /* child */
     {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
     /*
     close( 0 );
     close( 1 );
