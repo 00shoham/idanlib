@@ -207,6 +207,7 @@ int AsyncReadFromChildProcess( char* cmd,
   pid_t child = -1;
   int err = POpenAndRead( cmd, &fileDesc, &child );
   if( err ) Error( "Cannot popen child." );
+  if( child <= 0 ) Error( "AsyncReadFromChildProcess() - invalid child pid." );
 
   char buf[BUFLEN];
   char* ptr = NULL;

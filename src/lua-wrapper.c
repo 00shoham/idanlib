@@ -381,6 +381,7 @@ int LUAWebTransaction( lua_State* L )
   char* errMsg = NULL;
 
   Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
+
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
                     postData, 0, postContentType,          /* postData, postBinLen */
@@ -396,9 +397,11 @@ int LUAWebTransaction( lua_State* L )
                     );
                          
   Notice( "WebTransaction: return = %d", (int)err );
+
   if( err != CURLE_OK )
     {
     Warning( "%s: CURL says - %s", me, errMsg );
+    FreeTagValue( tv );
     FreeData( &d);
     FreeTagValue( tv );
     return 0;
@@ -412,6 +415,7 @@ int LUAWebTransaction( lua_State* L )
             NULLPROTECT( (char*)d.data ) );
 #endif
     lua_pushstring( L, (char*)d.data );
+    FreeTagValue( tv );
     FreeData( &d);
     FreeTagValue( tv );
     return 1;
