@@ -569,7 +569,6 @@ int LUARegExExtract( lua_State* L )
     }
   else
     {
-    printf( "RegExExtract( str=%s, pat=%s ) --> [%s]\n", string, pattern, result );
     lua_pushstring( L, result );
     }
   FreeTagValue( tv );
