@@ -698,8 +698,9 @@ void LUALoadScript( lua_State *L, char* fileName )
 
   /* not sure why we need this, but it seems to help
      with subsequent function calls */
-  if( lua_pcall( L, 0, 0, 0 ) ) /* prime the pump? */
-    Error( "Initial lua_pcall() failed");
+  int err = lua_pcall( L, 0, 0, 0 );
+  if( err ) /* prime the pump? */
+    Warning( "Initial lua_pcall() failed - %d - %s", err, lua_tostring(L,-1));
   }
 
 /* The convention is to pass in a _TAG_VALUE* list of arguments, where
