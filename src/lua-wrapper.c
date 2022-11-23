@@ -631,6 +631,48 @@ int LUANotice( lua_State* L )
   return 0;
   }
 
+int LUAWarning( lua_State* L )
+  {
+  if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
+    {
+    Warning( "LUAWarning: Top of LUA stack is not a string" );
+    return 0;
+    }
+
+  const char* str = lua_tostring( L, -1 );
+  lua_remove( L, -1 );
+  if( EMPTY( str ) )
+    {
+    Warning( "%s: Cannot call Notice with empty string" );
+    return 0;
+    }
+
+  Warning( str );
+
+  return 0;
+  }
+
+int LUAError( lua_State* L )
+  {
+  if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
+    {
+    Warning( "LUAWarning: Top of LUA stack is not a string" );
+    return 0;
+    }
+
+  const char* str = lua_tostring( L, -1 );
+  lua_remove( L, -1 );
+  if( EMPTY( str ) )
+    {
+    Warning( "%s: Cannot call Notice with empty string" );
+    return 0;
+    }
+
+  Error( str );
+
+  return 0;
+  }
+
 lua_State* LUAInit()
   {
   lua_State *L = luaL_newstate();    /* opens Lua */
@@ -658,6 +700,12 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUANotice );
   lua_setglobal( L, "Notice" );
+
+  lua_pushcfunction( L, LUAWarning );
+  lua_setglobal( L, "Warning" );
+
+  lua_pushcfunction( L, LUAError );
+  lua_setglobal( L, "Error" );
 
   lua_pushcfunction( L, LUATailFile );
   lua_setglobal( L, "TailFile" );
