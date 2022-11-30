@@ -770,6 +770,45 @@ _TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args 
     return NULL;
     }
 
+#ifdef DEBUG
+  char buf[BUFLEN];
+  char* ptr = buf;
+  char* end = ptr + sizeof(buf) - 2;
+  strncpy( ptr, "LUAFunctionCall: ", end-ptr ); ptr += strlen( ptr );
+  strncpy( ptr, functionName, end-ptr ); ptr += strlen( ptr );
+  strncpy( ptr, "( ", end-ptr ); ptr += strlen( ptr );
+  for( _TAG_VALUE* arg=args; arg!=NULL; arg=arg->next )
+    {
+    strncpy( ptr, NULLPROTECT( arg->tag ), end-ptr ); ptr += strlen( ptr );
+    strncpy( ptr, ": ", end-ptr ); ptr += strlen( ptr );
+    switch( arg->type )
+      {
+      case VT_STR: 
+        strncpy( ptr, NULLPROTECT( arg->value ), end-ptr ); ptr += strlen( ptr );
+        break;
+      case VT_INT: 
+        snprintf( ptr, end-ptr, "%d", arg->iValue ); ptr += strlen( ptr );
+        break;
+      case VT_DOUBLE: 
+        snprintf( ptr, end-ptr, "%.1lf", arg->dValue ); ptr += strlen( ptr );
+        break;
+      case VT_LIST: 
+        strncpy( ptr, "<LIST>", end-ptr ); ptr += strlen( ptr );
+        break;
+      default: 
+        strncpy( ptr, "<OTHER>", end-ptr ); ptr += strlen( ptr );
+        break;
+      }
+    if( arg->next!=NULL )
+      {
+      strncpy( ptr, ", ", end-ptr );
+      ptr += strlen( ptr );
+      }
+    }
+  strncpy( ptr, " )", end-ptr ); ptr += strlen( ptr );
+  Notice( buf );
+#endif
+
   int nArgs = 0;
   if( args!=NULL )
     nArgs = TagValueTableOnLuaStack( L, args );
