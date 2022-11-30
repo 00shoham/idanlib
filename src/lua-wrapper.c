@@ -806,6 +806,11 @@ _TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args 
       }
     }
   strncpy( ptr, " )", end-ptr ); ptr += strlen( ptr );
+
+  int stackDepth = lua_gettop( L );
+  snprintf( ptr, end-ptr, " stack depth=%d", stackDepth );
+  ptr += strlen( ptr );
+
   Notice( buf );
 #endif
 
