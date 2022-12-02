@@ -233,7 +233,7 @@ unsigned char* DecodeFromBase64( const char* ascii, int len, int *outputLength )
   if( *outputLength < 0 )
     *outputLength = 0;
 
-  unsigned char *bin = (unsigned char*)SafeCalloc( *outputLength, sizeof(char), "DecodeFromBase64 output" );
+  unsigned char *bin = (unsigned char*)SafeCalloc( *outputLength + 10, sizeof(char), "DecodeFromBase64 output" );
 
   int outputPos = 0; // counter for bin
   int charNo; // counter for what base64 char we're currently decoding
@@ -267,6 +267,8 @@ unsigned char* DecodeFromBase64( const char* ascii, int len, int *outputLength )
       bin[outputPos++] = (A<<2) | (B>>4);
       }
     }
+
+  bin[outputPos] = 0;
 
   return bin;
   }
