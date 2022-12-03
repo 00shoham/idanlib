@@ -6,7 +6,7 @@
 void AllocateData( _DATA* d, size_t n )
   {
   if( d==NULL )
-    Error( "Cannot allocate NULl _DATA structure" );
+    Error( "Cannot allocate NULL _DATA structure" );
   d->data = (unsigned char*)SafeCalloc( n, sizeof(unsigned char*), "HTTP response" );
   d->ptr = d->data;
   d->sizeAllocated = n;
@@ -16,18 +16,18 @@ void FreeData( _DATA* d )
   {
   if( d==NULL )
     {
-    Warning( "Cannot free NULl _DATA structure" );
+    Warning( "Cannot free NULL _DATA structure" );
     return;
     }
+
   if( d->data==NULL )
     Warning( "_DATA structure has no data" );
   else
-    {
     free( d->data );
-    d->data = NULL;
-    d->ptr = NULL;
-    d->sizeAllocated = 0;
-    }
+
+  d->data = NULL;
+  d->ptr = NULL;
+  d->sizeAllocated = 0;
   /* parent has to handle free( d ); */
   }
 
@@ -45,7 +45,7 @@ size_t CurlWriteback( void *payload,
   _DATA* buf = (_DATA*)data;
   if( buf==NULL )
     {
-    Warning( "CurlWriteback with NULl response buffer" );
+    Warning( "CurlWriteback with NULL response buffer" );
     return 0;
     }
 

@@ -413,8 +413,9 @@ int LUAWebTransaction( lua_State* L )
             NULLPROTECT( postData ),
             NULLPROTECT( (char*)d.data ) );
 #endif
-    lua_pushstring( L, (char*)d.data );
-    FreeData( &d);
+    const char* internalStr = lua_pushstring( L, (char*)d.data );
+    Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( internalStr ) );
+    FreeData( &d );
     FreeTagValue( tv );
     return 1;
     }
