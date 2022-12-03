@@ -14,6 +14,7 @@ OBJ=\
   proc-utils.o\
   sha1.o\
   sha256.o\
+  base64.o\
   sha-wrapper.o\
   str-utils.o\
   tag-value.o\

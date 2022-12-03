@@ -66,5 +66,6 @@
 #include "sha-wrapper.h"
 #include "curl-wrapper.h"
 #include "lua-wrapper.h"
+#include "base64.h"
 
 #endif
