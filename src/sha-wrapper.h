@@ -1,6 +1,12 @@
 #ifndef _INCLUDE_SHA_WRAPPER
 #define _INCLUDE_SHA_WRAPPER
 
+char* HashSHA256( unsigned char* string, size_t nBytes );
+char* HashSHA256WithSalt( unsigned char* string,
+                          size_t stringLength,
+                          unsigned char* salt,
+                          size_t saltLength );
+
 void GenerateSaltAndHashPassword( char* password,
                                   char** saltPtr,
                                   char** hashPtr );

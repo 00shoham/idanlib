@@ -14,6 +14,7 @@ OBJ=\
   proc-utils.o\
   sha1.o\
   sha256.o\
+  base64.o\
   sha-wrapper.o\
   str-utils.o\
   tag-value.o\
@@ -26,7 +27,7 @@ LUAPARTS := $(subst /, ,$(LUADIR))
 LUAVER := $(lastword $(LUAPARTS))
 INCLUDES=-I$(LUADIR)
 
-CFLAGS=-Wall -O2 -rdynamic $(INCLUDES)
+CFLAGS=-Wall -g -rdynamic $(INCLUDES)
 # CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
 CC=gcc $(CFLAGS)
 

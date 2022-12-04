@@ -447,3 +447,15 @@ int CompareStrings( const void* vA, const void* vB)
   return strcmp( a, b );
   }
 
+void MaskNonPrintableChars( unsigned char* str )
+  {
+  if( EMPTY( str ) )
+    return;
+  while( (*str)!=0 )
+    {
+    int c = *str;
+    if( ! isprint( c ) )
+      *str = '?';
+    ++str;
+    }
+  }
