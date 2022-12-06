@@ -26,5 +26,6 @@ void FreeArrayOfStrings( char** array, int len );
 char* GenerateAllocateGUID();
 int CompareStrings( const void* vA, const void* vB);
 void MaskNonPrintableChars( unsigned char* str );
+char* EncodeNonPrintableChars( unsigned char* str );
 
 #endif

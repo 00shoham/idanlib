@@ -3,6 +3,8 @@
 char generatedIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char validIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
 
+char* upperHexDigits = "0123456789ABCDEF";
+
 void FreeArrayOfStrings( char** array, int len )
   {
   if( array==NULL )
@@ -458,4 +460,40 @@ void MaskNonPrintableChars( unsigned char* str )
       *str = '?';
     ++str;
     }
+  }
+
+char* EncodeNonPrintableChars( unsigned char* str )
+  {
+  if( EMPTY( str ) )
+    return (char*)str;
+
+  int newLen = 0;
+  for( unsigned char* ptr=str; (*ptr)!=0; ++ptr )
+    {
+    int c = *ptr;
+    if( ! isprint( c ) )
+      newLen += 3;
+    else
+      newLen += 1;
+    }
+
+  char* newStr = (char*)SafeCalloc( newLen+5, sizeof(char), "EncodeNonPrintableChars" );
+  char* dst = newStr;
+  for( unsigned char* src=str; (*src)!=0; ++src )
+    {
+    int c = *src;
+    if( ! isprint( c ) )
+      {
+      int c1 = (c & 0xf0) >> 4;
+      int c2 = (c & 0x0f);
+      *(dst++) = '=';
+      *(dst++) = upperHexDigits[c1];
+      *(dst++) = upperHexDigits[c2];
+      }
+    else
+      *(dst++) = *src;
+    }
+  *dst = 0;
+
+  return newStr;
   }

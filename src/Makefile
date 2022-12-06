@@ -27,7 +27,7 @@ LUAPARTS := $(subst /, ,$(LUADIR))
 LUAVER := $(lastword $(LUAPARTS))
 INCLUDES=-I$(LUADIR)
 
-CFLAGS=-Wall -g -rdynamic $(INCLUDES)
+CFLAGS=-Wall -O2 $(INCLUDES)
 # CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
 CC=gcc $(CFLAGS)
 
