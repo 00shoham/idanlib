@@ -462,7 +462,7 @@ void MaskNonPrintableChars( unsigned char* str )
     }
   }
 
-char* EncodeNonPrintableChars( unsigned char* str )
+char* EncodeNonPrintableChars( unsigned char* str, unsigned char* omitChars )
   {
   if( EMPTY( str ) )
     return (char*)str;
@@ -471,6 +471,9 @@ char* EncodeNonPrintableChars( unsigned char* str )
   for( unsigned char* ptr=str; (*ptr)!=0; ++ptr )
     {
     int c = *ptr;
+    if( omitChars!=NULL && strchr( (char*)omitChars, c )!=NULL )
+      continue;
+
     if( ! isprint( c ) )
       newLen += 3;
     else
@@ -482,6 +485,9 @@ char* EncodeNonPrintableChars( unsigned char* str )
   for( unsigned char* src=str; (*src)!=0; ++src )
     {
     int c = *src;
+    if( omitChars!=NULL && strchr( (char*)omitChars, c )!=NULL )
+      continue;
+
     if( ! isprint( c ) )
       {
       int c1 = (c & 0xf0) >> 4;
