@@ -973,6 +973,71 @@ void KillExistingCommandInstances( char* commandLine )
     }
   }
 
+void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo )
+  {
+  if( argc<=0 || argv==NULL )
+    return;
+
+  pid_t me = getpid();
+  char meBuf[100];
+  snprintf( meBuf, sizeof(meBuf)-1, "%ld", (long)me );
+
+  pid_t parent = getppid();
+  char parentBuf[100];
+  snprintf( parentBuf, sizeof(parentBuf)-1, "%ld", (long)parent );
+
+  Notice( "KillEarlierInstancesOfThisProcess( %s )", argv[0] );
+
+  int fileDesc = -1;
+  pid_t child = -1;
+  char* cmd = "/bin/ps -efww";
+  int err = POpenAndRead( cmd, &fileDesc, &child );
+  if( err ) Error( "Cannot popen child [%s].", cmd );
+
+  int flags = fcntl( fileDesc, F_GETFL );
+  flags &= ~O_NONBLOCK;
+  fcntl( fileDesc, F_SETFL, flags);
+
+  FILE* f = fdopen( fileDesc, "r" );
+  char buf[BUFLEN];
+  while( fgets( buf, sizeof(buf)-1, f )==buf )
+    {
+    if( strstr( buf, meBuf )!=NULL
+        && strstr( buf, parentBuf )!=NULL )
+      { /* that's me - don't kill myself! */
+      continue;
+      }
+
+    int found = 1;
+    for( int i=0; i<argc; ++i )
+      {
+      if( strstr( buf, argv[i] )==NULL )
+        {
+        found = -1;
+        break;
+        }
+      }
+
+    if( found==1 )
+      { /* cmd line appears to match */
+      char* ptr = NULL;
+      char* logName = strtok_r( buf, " \t\r\n", &ptr );
+      char* procNumStr = strtok_r( NULL, " \t\r\n", &ptr );
+      if( GetUID( logName ) == getuid() )
+        { /* yes, it's mine */
+        long procNum = atol( procNumStr );
+        if( procNum>0 )
+          { /* and it's a real process number */
+          Notice( "Killing predecessor process %ld", procNum );
+          kill( (pid_t)procNum, sigNo );
+          }
+        }
+      }
+    }
+
+  fclose( f );
+  }
+
 uid_t GetUID( const char* logName )
   {
   if( EMPTY( logName ) )
