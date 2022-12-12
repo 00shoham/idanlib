@@ -4,6 +4,7 @@
 int ProcessExistsAndIsMine( pid_t p );
 int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr );
 int POpenAndSearch( const char *cmd, char* subString, char** result );
+int POpenAndSearchMultipleResults( const char *cmd, char* subString, char** result );
 int POpenAndWrite( const char *cmd, int* writePtr, pid_t* childPtr );
 int POpenAndReadWrite( const char* cmd, int* readFD, int* writeFD, pid_t* child );
 int AsyncReadFromChildProcess( char* cmd,

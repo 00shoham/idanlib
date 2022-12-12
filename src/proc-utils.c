@@ -94,6 +94,79 @@ int POpenAndSearch( const char *cmd, char* subString, char** result )
   return -2;
   }
 
+int POpenAndSearchMultipleResults( const char *cmd, char* subString, char** result )
+  {
+  if( EMPTY( cmd ) || EMPTY( subString ) )
+    return -1;
+
+  if( result==NULL )
+    return -2;
+
+  int fileDesc = -1;
+  pid_t child = -1;
+  int err = POpenAndRead( cmd, &fileDesc, &child );
+  if( err ) Error( "Cannot popen child [%s].", cmd );
+
+  int flags = fcntl( fileDesc, F_GETFL);
+  flags &= ~O_NONBLOCK;
+  fcntl( fileDesc, F_SETFL, flags);
+
+  FILE* f = fdopen( fileDesc, "r" );
+
+  char resultBuf[BIGBUF];
+  char* copyPtr = resultBuf;
+  char* endPtr = resultBuf + sizeof( resultBuf ) - 1;
+
+  char line[BUFLEN];
+  *copyPtr = 0;
+
+  while( fgets( line, sizeof(line)-1, f )==line )
+    {
+    if( strstr( line, subString )!=NULL )
+      {
+      (void)StripEOL( line );
+      int l = strlen( line );
+      if( endPtr-copyPtr > l )
+        {
+        strcpy( copyPtr, line );
+        copyPtr += l;
+        strcpy( copyPtr, "\n" );
+        copyPtr += 1;
+        }
+      else
+        {
+        Warning( "Not enough buffer space for line from command [%s]", cmd );
+        break;
+        }
+      }
+    }
+
+  *copyPtr = 0;
+
+  if( copyPtr > resultBuf )
+    *result = strdup( resultBuf );
+  else
+    *result = NULL;
+
+  fclose( f );
+  sleep(1);
+
+  int wstatus = -1;
+  if( waitpid( child, &wstatus, WNOHANG )==-1 )
+    {
+    Warning( "POpenAndSearchMultipleResults - waitpid waiting for child running [%s] returned -1.", cmd);
+    return -3;
+    }
+
+  if( WIFEXITED( wstatus ) )
+    {
+    return 0;
+    }
+
+  Warning( "POpenAndSearchMultipleResults - child running [%s] still running.", cmd);
+  return -4;
+  }
+
 int POpenAndReadWrite( const char* cmd, int* readFD, int* writeFD, pid_t* child )
   {
   int err = 0;
