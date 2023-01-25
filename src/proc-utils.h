@@ -25,7 +25,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName );
 int SyncRunShellNoIO( char* cmd );
 void SignalHandler( int signo );
 void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo );
-void KillExistingCommandInstances( char* commandLine );
+void KillExistingCommandInstances( char* commandLine, int sigNo );
 
 uid_t GetUID( const char* logName );
 gid_t GetGID( const char* groupName );

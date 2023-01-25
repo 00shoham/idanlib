@@ -1007,7 +1007,7 @@ void SignalHandler( int signo )
     }
   }
 
-void KillExistingCommandInstances( char* commandLine )
+void KillExistingCommandInstances( char* commandLine, int sigNo )
   {
   if( EMPTY( commandLine ) )
     return;
@@ -1031,7 +1031,7 @@ void KillExistingCommandInstances( char* commandLine )
       Notice( "Killing process %ld which belongs to %s", pidNum, userID );
       if( pidNum>0 )
         {
-        int err = kill( (pid_t)pidNum, SIGHUP );
+        int err = kill( (pid_t)pidNum, sigNo );
         if( err )
           {
           Warning( "Failed to send HUP signal to process %d: %d:%d:%s",
