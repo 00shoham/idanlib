@@ -5,7 +5,6 @@
  * shamelessly copied from NibbleAndAHalf and modified.  Thank You!!
  *
  * Original was created by William Sherif on 2022-02-01.
- * Copyright (c) 2022 William Sherif. All rights reserved.
  */
 
 /*

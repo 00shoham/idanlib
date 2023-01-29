@@ -1046,6 +1046,13 @@ void KillExistingCommandInstances( char* commandLine, int sigNo )
     }
   }
 
+void KillExistingCommandInstancesGentleFirst( char* commandLine )
+  {
+  KillExistingCommandInstances( commandLine, SIGHUP );
+  sleep(1);
+  KillExistingCommandInstances( commandLine, SIGKILL );
+  }
+
 void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo )
   {
   if( argc<=0 || argv==NULL )
