@@ -2,6 +2,8 @@
 
 #define DEBUG 1
 
+pthread_mutex_t luaLock = PTHREAD_MUTEX_INITIALIZER;
+
 const char* LuaTypeName( int type )
   {
   switch( type )
