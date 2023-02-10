@@ -831,7 +831,15 @@ _TAG_VALUE* LUAFunctionCall( lua_State *L, char* functionName, _TAG_VALUE* args 
     return NULL;
     }
 
+#ifdef DEBUG
+  Notice( "Returned from lua_pcall(%s)", functionName );
+#endif
+
   _TAG_VALUE* response = LuaTableToTagValue( L );
+
+#ifdef DEBUG
+  Notice( "Got response (%p) from Lua table", response==NULL?"NULL":"valid-ptr" );
+#endif
 
   lua_remove( L, -1 );
   return response;
