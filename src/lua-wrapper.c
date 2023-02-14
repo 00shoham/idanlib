@@ -355,8 +355,8 @@ int LUAWebTransaction( lua_State* L )
     proxyPassword = NULL;
 
   int timeoutSeconds = GetTagValueInt( tv, "TIMEOUT_SECONDS" );
-  if( timeoutSeconds<0 )
-    timeoutSeconds = 0;
+  if( timeoutSeconds<=0 )
+    timeoutSeconds = 60;
 
   _TAG_VALUE* httpHeaders = NULL;
   char* userAgent = GetTagValue( tv, "USER_AGENT" );

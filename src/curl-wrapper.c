@@ -360,7 +360,12 @@ CURLcode WebTransaction( char* url,
     }
 
   if( timeoutSeconds>0 )
+    {
     curl_easy_setopt( curl, CURLOPT_TIMEOUT, timeoutSeconds );
+    curl_easy_setopt( curl, CURLOPT_CONNECTTIMEOUT, timeoutSeconds );
+    }
+  else
+    Warning( "WebTransaction: no timeout specified!" );
 
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYHOST, skipVerifyHost ? 0 : 2 );
   curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, skipVerifyPeer ? 0 : 1 );
