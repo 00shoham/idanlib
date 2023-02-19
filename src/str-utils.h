@@ -20,6 +20,7 @@ int AllDigitsSingleDot( char* str );
 int CountInString( const char* string, const int c );
 int StringIsAnIdentifier( char* str );
 void LowerCase( char* dst, int dstSize, char* src );
+void UpperCase( char* dst, int dstSize, char* src );
 int StringMatchesRegex( char* expr, char* str );
 char* ExtractRegexFromString( char* expr, char* str );
 void FreeArrayOfStrings( char** array, int len );

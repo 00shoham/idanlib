@@ -362,6 +362,30 @@ void LowerCase( char* dst, int dstSize, char* src )
   *dst = 0;
   }
 
+void UpperCase( char* dst, int dstSize, char* src )
+  {
+  if( dst==NULL )
+    return;
+
+  if( dst!=src )
+    *dst = 0;
+
+  if( EMPTY( src ) )
+    return;
+
+  char* endp = dst + dstSize - 1;
+  while( (*src)!=0 && dst<endp )
+    {
+    int c = *src;
+    c = toupper( c );
+    *dst = c;
+    ++dst;
+    ++src;
+    }
+
+  *dst = 0;
+  }
+
 /* Regular expression test.
  * 0 = match.
  */
