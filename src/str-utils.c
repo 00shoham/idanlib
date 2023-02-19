@@ -349,7 +349,7 @@ void LowerCase( char* dst, int dstSize, char* src )
   if( EMPTY( src ) )
     return;
 
-  char* endp = dst + dstSize - 1;
+  char* endp = dst + dstSize;
   while( (*src)!=0 && dst<endp )
     {
     int c = *src;
@@ -373,7 +373,7 @@ void UpperCase( char* dst, int dstSize, char* src )
   if( EMPTY( src ) )
     return;
 
-  char* endp = dst + dstSize - 1;
+  char* endp = dst + dstSize;
   while( (*src)!=0 && dst<endp )
     {
     int c = *src;
