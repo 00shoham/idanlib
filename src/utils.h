@@ -46,7 +46,7 @@
 #define RE_TIME "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]"
 #define RE_TIME_NOSEC "[0-9][0-9]:[0-9][0-9]"
 
-#define RE_EMAIL_ADDRESS "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
+#define RE_EMAIL_ADDRESS "[A-Za-z0-9._%+-=]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
 #define RE_EMAIL_DOMAIN "[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
 
 extern pthread_mutex_t luaLock;
