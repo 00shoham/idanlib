@@ -694,36 +694,6 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
   return retVal;
   }
 
-/* 0 return only indicates that child forked successfully */
-int AsyncRunCommandNoIO( char* cmd )
-  {
-  if( EMPTY( cmd ) )
-    return -1;
-
-  NARGV* args = nargv_parse( cmd );
-  if( args==NULL )
-    Error( "Failed to parse cmd line [%s]", cmd );
-
-  pid_t pid = fork();
-  if( pid<0 )
-    Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
-
-  if( pid == 0 ) /* child */
-    {
-    /* Linux-specific - terminate via SIGHUP if parent exits */
-    prctl( PR_SET_PDEATHSIG, SIGHUP );
-    close( 0 );
-    close( 1 );
-    close( 2 );
-    (void)execv( args->argv[0], args->argv );
-    /* end of code */
-    }
-
-  nargv_free( args );
-
-  return 0;
-  }
-
 int SyncRunCommandNoIO( char* cmd )
   {
   if( EMPTY( cmd ) )
@@ -992,6 +962,35 @@ int SyncRunShellNoIO( char* cmd )
 
   return retVal;
   }
+
+/* 0 return only indicates that child forked successfully */
+int ASyncRunShellNoIO( char* cmd )
+  {
+  if( EMPTY( cmd ) )
+    return -1;
+
+  pid_t pid = fork();
+  if( pid<0 )
+    Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
+
+  if( pid == 0 ) /* child */
+    {
+    /* Linux-specific - terminate via SIGHUP if parent exits */
+    prctl( PR_SET_PDEATHSIG, SIGHUP );
+    close( 0 );
+    close( 1 );
+    close( 2 );
+    Notice( "Forked.  About to exec [%s] in a shell", cmd );
+    execl( "/bin/sh", "sh", "-c", cmd, (char*)NULL );
+    /* should not reach this - so it's an error */
+    Error( "Failed to run /bin/sh sh -c \"%s\" - %d:%s",
+           cmd, errno, strerror( errno ) );
+    /* end of code */
+    }
+
+  return 0;
+  }
+
 
 void SignalHandler( int signo )
   {
