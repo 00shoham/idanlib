@@ -22,6 +22,7 @@ int AsyncRunCommandNoIO( char* cmd );
 int SyncRunCommandNoIO( char* cmd );
 int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin );
 int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName );
+int ASyncRunShellNoIO( char* cmd );
 int SyncRunShellNoIO( char* cmd );
 void SignalHandler( int signo );
 void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo );
