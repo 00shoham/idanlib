@@ -957,19 +957,49 @@ int ASyncRunShellNoIO( char* cmd )
   if( EMPTY( cmd ) )
     return -1;
 
-  pid_t pid = fork();
+  char oldpath[BUFLEN], *oldp=NULL;
+  oldp = getcwd( oldpath, sizeof(oldpath)-1 );
+  if( oldp!=oldpath )
+    Error( "Failed to get old path" );
+
+  pid_t pid = LaunchDaemon( 1 );
   if( pid<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
   if( pid == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
-    prctl( PR_SET_PDEATHSIG, SIGHUP );
-    close( 0 );
-    close( 1 );
-    close( 2 );
     Notice( "Forked.  About to exec [%s] in a shell", cmd );
+
+    if( chdir( oldp ) )
+      Error( "Failed to return to path %s", oldp );
+
+#if 0
+    int fd = open( "/tmp/ASyncRunShellNoIO.log",
+                   O_APPEND | O_WRONLY | O_CREAT, 0666 );
+    if( fd<0 )
+      {
+      Warning( "Failed to open log file /tmp/ASyncRunShellNoIO.log" );
+      }
+    else
+      {
+      char buf[BIGBUF];
+      snprintf( buf, sizeof(buf)-1, "Logging output from [%s]\n", cmd );
+      int n = strlen( buf );
+      if( write( fd, buf, n )!=n )
+        Warning( "Failed to write initial item to log file" );
+
+      snprintf( buf, sizeof(buf)-1, "Running in [%s]\n", oldp );
+      n = strlen( buf );
+      if( write( fd, buf, n )!=n )
+        Warning( "Failed to write second item to log file" );
+
+      dup2( fd, 1 );
+      dup2( fd, 2 );
+      }
+#endif
     execl( "/bin/sh", "sh", "-c", cmd, (char*)NULL );
+
     /* should not reach this - so it's an error */
     Error( "Failed to run /bin/sh sh -c \"%s\" - %d:%s",
            cmd, errno, strerror( errno ) );
