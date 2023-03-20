@@ -1,4 +1,5 @@
 BIN=\
+  run\
   date-utils-test\
   proc-test\
   async-command-io-test\
