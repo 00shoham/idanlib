@@ -704,17 +704,14 @@ int AsyncRunCommandNoIO( char* cmd )
   if( args==NULL )
     Error( "Failed to parse cmd line [%s]", cmd );
 
-  pid_t pid = fork();
+  pid_t pid = LaunchDaemon( 1 );
   if( pid<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
   if( pid == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
-    prctl( PR_SET_PDEATHSIG, SIGHUP );
-    close( 0 );
-    close( 1 );
-    close( 2 );
+    /* prctl( PR_SET_PDEATHSIG, SIGHUP ); */
     (void)execv( args->argv[0], args->argv );
     /* end of code */
     }
