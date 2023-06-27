@@ -802,9 +802,10 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
     /* end of code */
     }
 
+  /* we are in the parent / original process */
   nargv_free( args );
 
-  close( readFD ); /* used in child only */
+  close( readFD );
 
   int readStream = open( fileNameStdin, O_RDONLY );
   if( readStream<0 )
