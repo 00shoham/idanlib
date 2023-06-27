@@ -843,7 +843,7 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.\n");
+    /* Notice( "child exited.\n"); */
     }
 
   return retVal;
@@ -943,7 +943,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.\n");
+    /* Notice( "child exited.\n"); */
     }
 
   return retVal;
