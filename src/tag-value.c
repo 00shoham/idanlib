@@ -40,7 +40,8 @@ _TAG_VALUE* NewTagValue( char* tag, const char* value, _TAG_VALUE* list, int rep
     /* do we already have this tag?  if so, replace the value */
     for( _TAG_VALUE* t=list; t!=NULL; t=t->next )
       {
-      if( NOTEMPTY( t->tag ) && strcmp( t->tag,tag )==0 )
+      if( ( NOTEMPTY( t->tag ) && strcmp( t->tag,tag )==0 )
+          || ( EMPTY( t->tag ) && EMPTY( tag ) ) )
         {
         FreeIfAllocated( &(t->value) );
         if( value==NULL ) t->value = NULL;
