@@ -56,6 +56,7 @@ long GetAvailableSpaceOnVolumeBytes( char* path );
 int CountFilesInFolder( char* folder, char* prefix, char* suffix,
                         time_t *earliest, time_t* latest );
 int FileMatchesRegex( char* expr, char* fileName );
+long GetFileAge( char* folder, char* fileName );
 
 #endif
 

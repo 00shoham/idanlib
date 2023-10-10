@@ -761,6 +761,41 @@ int CountFilesInFolder( char* folder, char* prefix, char* suffix,
   return nEntries;
   }
 
+long GetFileAge( char* folder, char* fileName )
+  {
+  if( EMPTY( folder ) )
+    {
+    Warning( "Cannot get age of file in NULL folder" );
+    return -1;
+    }
+
+  if( EMPTY( fileName ) )
+    {
+    Warning( "Cannot get age of unnamed file" );
+    return -2;
+    }
+
+  char* fullPath = MakeFullPath( folder, fileName );
+  if( EMPTY( fullPath ) )
+    {
+    Warning( "Failed to genearte full path of file to age" );
+    return -3;
+    }
+
+  struct stat sbuf;
+  if( stat( fullPath, &sbuf )!=0 )
+    {
+    Warning( "Cannot stat %s", fullPath );
+    free( fullPath );
+    return -4;
+    }
+
+  time_t tNow = time(NULL);
+  long age = (long) tNow - sbuf.st_mtime;
+
+  return age;
+  }
+
 void GrabEndOfFile( FILE* input, char* output, int outputLen )
   {
   char* endPtr = output + outputLen - 1;
