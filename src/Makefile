@@ -22,10 +22,10 @@ OBJ=\
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
 
-LUADIR := $(shell /usr/bin/find /usr/include -type d -name 'lua*' | sort | tail -1)
+LUADIR := $(shell ./lua-dir.sh)
 LUAPARTS := $(subst /, ,$(LUADIR))
 LUAVER := $(lastword $(LUAPARTS))
-INCLUDES=-I$(LUADIR)
+INCLUDES=$(LUADIR)
 
 CFLAGS=-Wall -O2 $(INCLUDES)
 # CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
