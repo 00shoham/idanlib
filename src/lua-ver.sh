@@ -1,9 +1,12 @@
 #!/bin/sh
 
-LUAVER=`find /usr/lib -name 'liblua[0-9]\.[0-9]\.a'\
+LUAVER=`find /usr/lib /usr/lib64\
+	-name 'liblua[0-9]\.[0-9]\.a'\
+	-or -name 'liblua-[0-9]\.[0-9]\.so'\
         | sort\
         | tail -1\
         | sed 's/\.a$//'\
+        | sed 's/\.so$//'\
         | sed 's/.*liblua//'`
 
 if [ -z "$LUAVER" ] ; then
