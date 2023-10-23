@@ -23,8 +23,7 @@ utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
 
 LUADIR := $(shell ./lua-dir.sh)
-LUAPARTS := $(subst /, ,$(LUADIR))
-LUAVER := $(lastword $(LUAPARTS))
+# LUAVER := $(shell ./lua-ver.sh)
 INCLUDES=$(LUADIR)
 
 CFLAGS=-Wall -O2 $(INCLUDES)
