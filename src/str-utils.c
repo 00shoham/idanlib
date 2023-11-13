@@ -527,3 +527,10 @@ char* EncodeNonPrintableChars( unsigned char* str, unsigned char* omitChars )
 
   return newStr;
   }
+
+char* StrDupIfNotNull( char* str )
+  {
+  if( str==NULL || *str==0 )
+    return NULL;
+  return strdup( str );
+  }
