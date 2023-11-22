@@ -19,8 +19,8 @@ int EncryptAES256Base64Encode( uint8_t* plaintext,
                                size_t plaintextLen,
                                uint8_t* key,
                                size_t keyLen,
-                               uint8_t** outputBuffer,
-                               size_t* outputSize );
+                               char** outputBuffer,
+                               int* outputSize );
 
 int Base64DecodeDecryptAES256( char* base64cipher,
                                int base64Len,

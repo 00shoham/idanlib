@@ -119,8 +119,8 @@ int EncryptAES256Base64Encode( uint8_t* plaintext,
                                size_t plaintextLen,
                                uint8_t* key,
                                size_t keyLen,
-                               uint8_t** outputBuffer,
-                               size_t* outputSize )
+                               char** outputBuffer,
+                               int* outputSize )
   {
   uint8_t* ciphertext = NULL;
   size_t   cipherlen = 0;
@@ -134,8 +134,8 @@ int EncryptAES256Base64Encode( uint8_t* plaintext,
   char* base64 = EncodeToBase64( ciphertext, cipherlen, &base64len );
   free( ciphertext );
 
-  *outputBuffer = (uint8_t*)base64;
-  *outputSize = (size_t)base64len;
+  *outputBuffer = base64;
+  *outputSize = base64len;
 
   return 0;
   }
