@@ -114,3 +114,56 @@ int DecryptAES256( uint8_t* ciphertext,
 
   return 0;
   }
+
+int EncryptAES256Base64Encode( uint8_t* plaintext,
+                               size_t plaintextLen,
+                               uint8_t* key,
+                               size_t keyLen,
+                               uint8_t** outputBuffer,
+                               size_t* outputSize )
+  {
+  uint8_t* ciphertext = NULL;
+  size_t   cipherlen = 0;
+  int err = EncryptAES256( plaintext, plaintextLen, key, keyLen,
+                           &ciphertext, &cipherlen );
+
+  if( err )
+    return err;
+
+  int base64len = 0;
+  char* base64 = EncodeToBase64( ciphertext, cipherlen, &base64len );
+  free( ciphertext );
+
+  *outputBuffer = (uint8_t*)base64;
+  *outputSize = (size_t)base64len;
+
+  return 0;
+  }
+
+int Base64DecodeDecryptAES256( char* base64cipher,
+                               int base64Len,
+                               uint8_t* key,
+                               size_t keyLen,
+                               uint8_t** outputBuffer,
+                               size_t* outputSize )
+  {
+  int rawLen = 0;
+  uint8_t* rawEncrypted = DecodeFromBase64( base64cipher, base64Len, &rawLen );
+  if( rawLen == 0 )
+    return -999;
+  if( rawLen < 0 )
+    return rawLen;
+
+  size_t   plainlen = 0;
+  uint8_t* plaintext = NULL;
+  int err = DecryptAES256( rawEncrypted, rawLen, key, keyLen,
+                           &plaintext, &plainlen );
+  if( err )
+    return err;
+
+  *outputBuffer = (uint8_t*)plaintext;
+  *outputSize = (size_t)plainlen;
+
+  return 0;
+  }
+
