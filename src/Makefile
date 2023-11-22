@@ -15,6 +15,7 @@ OBJ=\
   sha1.o\
   sha256.o\
   tiny-aes.o\
+  aes-wrapper.o\
   base64.o\
   sha-wrapper.o\
   str-utils.o\
