@@ -65,6 +65,7 @@ extern pthread_mutex_t luaLock;
 #include "nargv.h"
 #include "globs.h"
 #include "sha-wrapper.h"
+#include "aes-wrapper.h"
 #include "curl-wrapper.h"
 #include "lua-wrapper.h"
 #include "base64.h"
