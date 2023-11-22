@@ -30,7 +30,7 @@ int EncryptAES256( uint8_t* plaintext,
   /* put iv in first AES_BLOCKLEN bytes */
   uint8_t* myPlaintext = (uint8_t*)SafeCalloc( targetPlaintextLen + AES_BLOCKLEN, sizeof( uint8_t ), "resized AES input" );
   if( plaintextLen>0 )
-    memcpy( myPlaintext, plaintext, plaintextLen );
+    memcpy( myPlaintext+AES_BLOCKLEN, plaintext, targetPlaintextLen );
 
   if( keyLen > AES_KEYLEN )
     keyLen = AES_KEYLEN;
@@ -54,10 +54,10 @@ int EncryptAES256( uint8_t* plaintext,
   for( int i=0; i<AES_BLOCKLEN; ++i )
     myPlaintext[i] = rand() % 256;
   AES_init_ctx_iv( &ctx, myKey, myPlaintext );
-  AES_CBC_encrypt_buffer(&ctx, myPlaintext + AES_BLOCKLEN, plaintextLen);
+  AES_CBC_encrypt_buffer(&ctx, myPlaintext + AES_BLOCKLEN, targetPlaintextLen);
 
   *outputBuffer = myPlaintext;
-  *outputSize = plaintextLen + AES_BLOCKLEN;
+  *outputSize = targetPlaintextLen + AES_BLOCKLEN;
 
   if( keyLen < AES_KEYLEN )
     free( myKey );
