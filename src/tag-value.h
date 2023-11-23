@@ -30,6 +30,7 @@ _TAG_VALUE* NewTagValueList( char* tag, _TAG_VALUE* subList, _TAG_VALUE* list, i
 _TAG_VALUE* CopyTagValueList( _TAG_VALUE* list );
 char* GetTagValue( _TAG_VALUE* list, char* tagName );
 _TAG_VALUE* FindTagValue( _TAG_VALUE* list, char* tagName );
+_TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName );
 int GetTagValueInt( _TAG_VALUE* list, char* tagName );
 double GetTagValueDouble( _TAG_VALUE* list, char* tagName );
 _TAG_VALUE* GetTagValueList( _TAG_VALUE* list, char* tagName );

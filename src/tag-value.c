@@ -328,6 +328,28 @@ _TAG_VALUE* FindTagValue( _TAG_VALUE* list, char* tagName )
   return retVal;
   }
 
+_TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName )
+  {
+  _TAG_VALUE* retVal = NULL;
+  if( EMPTY( tagName ) )
+    {
+    return NULL;
+    }
+
+  while( list!=NULL )
+    {
+    if( NOTEMPTY( list->tag)
+        && strcasecmp(list->tag,tagName)==0 )
+      {
+      retVal = list;
+      break;
+      }
+    list = list->next;
+    }
+
+  return retVal;
+  }
+
 int GetTagValueInt( _TAG_VALUE* list, char* tagName )
   {
   int retVal = INVALID_INT;
