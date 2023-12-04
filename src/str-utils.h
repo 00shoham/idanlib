@@ -29,5 +29,8 @@ int CompareStrings( const void* vA, const void* vB);
 void MaskNonPrintableChars( unsigned char* str );
 char* EncodeNonPrintableChars( unsigned char* str, unsigned char* omitChars  );
 char* StrDupIfNotNull( char* str );
+int HexDigitNumber( int c );
+char* EscapeString( uint8_t* rawString, size_t rawLen, char* buf, size_t buflen );
+uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen );
 
 #endif

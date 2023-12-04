@@ -534,3 +534,93 @@ char* StrDupIfNotNull( char* str )
     return NULL;
   return strdup( str );
   }
+
+char _hexdigits[] = "0123456789abcdef";
+
+int HexDigitNumber( int c )
+  {
+  if( c>='0' && c<='9' )
+    return c-'0';
+  if( c>='a' && c<='f' )
+    return c-'a' + 10;
+  if( c>='A' && c<='F' )
+    return c-'A' + 10;
+  return -1;
+  }
+
+char* EscapeString( uint8_t* rawString, size_t rawLen, char* buf, size_t buflen )
+  {
+  if( EMPTY( rawString ) )
+    return (char*)rawString;
+
+  if( buf==NULL || buflen<1 )
+    Error( "Cannot escape a string into an empty buffer" );
+
+  char* endp = buf + buflen - 1;
+  char* ptr = buf;
+
+  for( int i=0; i<(int)rawLen; ++i )
+    {
+    int c = rawString[i];
+    if( isprint( c ) )
+      *(ptr++) = c;
+    else if( ptr+4<endp )
+      {
+      *(ptr++) = '\\';
+      int high = ( c & 0xf0 ) >> 4;
+      int low = c & 0x0f;
+      *(ptr++) = 'x';
+      *(ptr++) = _hexdigits[high];
+      *(ptr++) = _hexdigits[low];
+      }
+    else
+      Error( "Buffer overflow in EscapeString" );
+    }
+  *ptr = 0;
+
+  return buf;
+  }
+     
+uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen )
+  {
+  if( EMPTY( src ) )
+    return (uint8_t*)src;
+
+  if( dst==NULL || buflen<1 )
+    Error( "Cannot unescape a string into an empty buffer" );
+
+  uint8_t* ptr = dst;
+  uint8_t* endp = dst + buflen - 1;
+
+  char* endsrc = src + strlen(src);
+
+  for( char* p=src; *p!=0 && ptr < endp; ++p )
+    {
+    int c = *p;
+    int h = 0;
+    int l = 0;
+
+    if( c=='\\'
+        && (p+3)<endsrc
+        && *(p+1)=='x'
+        && isxdigit( *(p+2) )
+        && isxdigit( *(p+3) ) )
+      {
+      int hc = *(p+2);
+      int lc = *(p+3);
+      h = HexDigitNumber(hc);
+      l = HexDigitNumber(lc);
+      p += 3;
+      int cc = (h << 4) | l;
+      *(ptr++) = cc;
+      }
+    else
+      {
+      *(ptr++) = c;
+      }
+    }
+
+  *ptr = 0;
+
+  return dst;
+  }
