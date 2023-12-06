@@ -155,7 +155,8 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
     }
 
   char* cookie = EncodeIdentityInCookie( userID, addr, ttlSeconds, key );
-  printf( "Set-Cookie: %s=%s\n", COOKIE_ID, cookie );
+
+  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", COOKIE_ID, cookie, ttlSeconds);
   free( cookie );
 
   return 0;
