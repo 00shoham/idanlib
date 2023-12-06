@@ -70,5 +70,8 @@ extern pthread_mutex_t luaLock;
 #include "curl-wrapper.h"
 #include "lua-wrapper.h"
 #include "base64.h"
+#include "session-cookie.h"
+
+#define DEFAULT_REMOTE_ADDR "REMOTE_ADDR"
 
 #endif

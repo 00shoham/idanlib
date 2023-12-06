@@ -20,6 +20,7 @@ OBJ=\
   sha-wrapper.o\
   str-utils.o\
   tag-value.o\
+  session-cookie.o\
 
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
