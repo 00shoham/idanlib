@@ -21,6 +21,7 @@ OBJ=\
   str-utils.o\
   tag-value.o\
   session-cookie.o\
+  htpasswd-wrapper.o\
 
 utils.a: $(OBJ)
 	ar rcs utils.a $(OBJ)
