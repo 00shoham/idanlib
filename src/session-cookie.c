@@ -162,6 +162,11 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   return 0;
   }
 
+void ClearSessionCookie()
+  { 
+  printf( "Set-Cookie: %s=; Max-Age=-1\n", COOKIE_ID );
+  }
+
 char* GetSessionCookieFromEnvironment()
   {
   char cookiePrefix[BUFLEN];
