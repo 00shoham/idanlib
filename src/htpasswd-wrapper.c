@@ -95,6 +95,8 @@ int HTPasswdAddUser( char* lockPath, char* passwdFile, char* userID, char* passw
     return -2;
   if( IsValidPassword( password ) !=0 )
     return -3;
+  if( IsValidPassword( userID ) !=0 )
+    return -4;
 
   int err = 0;
   int lockFD = 0;
@@ -203,6 +205,8 @@ int HTPasswdResetPassword( char* lockPath, char* passwdFile, char* userID, char*
     return -2;
   if( IsValidPassword( password ) !=0 )
     return -3;
+  if( IsValidPassword( userID ) !=0 )
+    return -4;
 
   int err = 0;
   int lockFD = 0;
@@ -259,6 +263,8 @@ int HTPasswdCheckPassword( char* lockPath, char* passwdFile, char* userID, char*
     return -2;
   if( IsValidPassword( password ) !=0 )
     return -3;
+  if( IsValidPassword( userID ) !=0 )
+    return -4;
 
   int err = 0;
   int lockFD = 0;
@@ -329,7 +335,9 @@ int HTPasswdChangePassword( char* lockPath, char* passwdFile, char* userID, char
   if( IsValidPassword( oldp ) !=0 )
     return -3;
   if( IsValidPassword( newp ) !=0 )
-    return -3;
+    return -4;
+  if( IsValidPassword( userID ) !=0 )
+    return -5;
 
   int err = 0;
   int lockFD = 0;
