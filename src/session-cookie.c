@@ -1,5 +1,26 @@
 #include "utils.h"
 
+char* SimpleHash( char* string, int nBytes )
+  {
+  if( EMPTY( string ) )
+    return NULL;
+  if( nBytes<1 || nBytes>8 )
+    Error( "SimpleHash() - 1-8 bytes" );
+
+  uint8_t* raw = (uint8_t*)string;
+  uint8_t* hash = (uint8_t*)SafeCalloc( nBytes + 1, sizeof(uint8_t), "Hash" );
+  for( int i=0; string[i]!=0; ++i )
+    hash[ i%nBytes ] ^= raw[i];
+
+  int encLen = 0;
+  char* encoded = EncodeToBase64( hash, nBytes, &encLen );
+  if( encLen<=0 )
+    Error( "Failed to EncodeToBase64 in SimpleHash" );
+  free( hash );
+
+  return encoded;
+  }
+
 void ClearCookie( char* cookie )
   { 
   printf( "Set-Cookie: %s=; Max-Age=-1\n", cookie );
@@ -61,9 +82,13 @@ char* GetSessionCookieFromEnvironment()
   return GetCookieFromEnvironment( COOKIE_ID );
   }
 
-char* EncodeIdentityInCookie( char* userID, char* remoteAddr, long ttlSeconds, uint8_t* key )
+char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, long ttlSeconds, uint8_t* key )
   {
-  if( EMPTY( userID ) || EMPTY( remoteAddr) || EMPTY( key ) || ttlSeconds<=0 )
+  if( EMPTY( userID )
+      || EMPTY( remoteAddr )
+      || EMPTY( userAgent )
+      || EMPTY( key )
+      || ttlSeconds<=0 )
     {
     Warning( "Invalid arguments to EncodeIdentityInCookie" );
     return NULL;
@@ -73,8 +98,8 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, long ttlSeconds, u
   time_t tEnd = tNow + ttlSeconds;
 
   char plaintext[BUFLEN];
-  snprintf( plaintext, sizeof(plaintext)-1, "USER:%s\nADDR:%s\nEXPT:%ld\n",
-            userID, remoteAddr, (long)tEnd );
+  snprintf( plaintext, sizeof(plaintext)-1, "USER:%s\nADDR:%s\nUAGT:%s\nEXPT:%ld\n",
+            userID, remoteAddr, userAgent, (long)tEnd );
 
   char* crypto = NULL;
   int cryptoLen = 0;
@@ -193,7 +218,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
   return -11;
   }
 
-int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, uint8_t* key )
+int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key )
   { 
   if( EMPTY( userID ) )
     { 
@@ -215,7 +240,16 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
     return -3;
     }
 
-  char* cookie = EncodeIdentityInCookie( userID, addr, ttlSeconds, key );
+  varName = EMPTY( userAgentVariable ) ? DEFAULT_USER_AGENT_VAR : userAgentVariable;
+  char* uagt = getenv( varName );
+  if( EMPTY( uagt ) )
+    {
+    Warning( "PrintSessionCookie() - cannot discern user agent from HTTP header %s", varName );
+    return -4;
+    }
+  char* userAgentHash = SimpleHash( uagt, 4 );
+
+  char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
   printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", COOKIE_ID, cookie, ttlSeconds);
   free( cookie );
