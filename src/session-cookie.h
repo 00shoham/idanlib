@@ -14,7 +14,7 @@ char* GetCookieFromEnvironment( char* cookie );
 char* GetSessionCookieFromEnvironment();
 
 char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, long ttlSeconds, uint8_t* key );
-int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_t* key );
+int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* userAgent, uint8_t* key );
 int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key );
 void ClearSessionCookie();
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key );

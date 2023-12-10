@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#define USER_AGENT_HASH_LEN 4
+
 char* SimpleHash( char* string, int nBytes )
   {
   if( EMPTY( string ) )
@@ -113,7 +115,7 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, l
   return strdup( crypto );
   }
 
-int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_t* key )
+int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* userAgent, uint8_t* key )
   {
   if( EMPTY( cookie ) || userID==NULL || EMPTY( remoteAddr) || EMPTY( key ) )
     {
@@ -135,6 +137,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
 
   int gotUser = 0;
   int gotAddr = 0;
+  int gotUagt = 0;
   int gotTime = 0;
 
   char* ptr = NULL;
@@ -162,10 +165,25 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
         }
       if( strcmp( pAddr, remoteAddr )!=0 )
         {
-        Warning( "User has changed remote address (from %s to %s)", pAddr, remoteAddr );
-        return -4;
+        Warning( "User has moved - IP changed (from %s to %s)", remoteAddr, pAddr );
+        /* just a warning -- return -4; */
         }
       gotAddr = 1;
+      }
+    else if( strncmp( line, "UAGT:", 5 )==0 )
+      {
+      char* uAgent = line + 5;
+      if( EMPTY( uAgent ) )
+        {
+        Warning( "Empty UAGT in session cookie" );
+        return -5;
+        }
+      if( strcmp( uAgent, userAgent )!=0 )
+        {
+        Warning( "User has changed user agent (from %s to %s)", userAgent, uAgent );
+        return -6;
+        }
+      gotUagt = 1;
       }
     else if( strncmp( line, "EXPT:", 5 )==0 )
       {
@@ -173,19 +191,19 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
       if( EMPTY( pTime ) )
         {
         Warning( "Empty ADDR in session cookie" );
-        return -5;
+        return -7;
         }
       long expT = 0;
       if( sscanf( pTime, "%ld", &expT )!=1 )
         {
         Warning( "Invalid EXPT (%s) in session cookie", pTime );
-        return -6;
+        return -8;
         }
       time_t tNow = time(NULL);
       if( (long)tNow >= expT )
         {
         Warning( "Session expired" );
-        return -7;
+        return -9;
         }
       gotTime = 1;
       }
@@ -194,11 +212,11 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
     else
       {
       Warning( "Unexpected line in session state: %s", line );
-      return -8;
+      return -10;
       }
     }
 
-  if( gotUser && gotAddr && gotTime)
+  if( gotUser && gotAddr && gotTime && gotUagt )
     return 0;
 
   if( ! gotUser )
@@ -213,9 +231,15 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_
     return -10;
     }
 
+  if( ! gotUagt )
+    {
+    Warning( "Session state does not specify the user agent" );
+    return -11;
+    }
+
   /* gotTime must be 0 to reach this */
   Warning( "Session state does not specify the time" );
-  return -11;
+  return -12;
   }
 
 int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key )
@@ -247,7 +271,7 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
     Warning( "PrintSessionCookie() - cannot discern user agent from HTTP header %s", varName );
     return -4;
     }
-  char* userAgentHash = SimpleHash( uagt, 4 );
+  char* userAgentHash = SimpleHash( uagt, USER_AGENT_HASH_LEN );
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
@@ -273,8 +297,16 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
     return NULL;
     }
 
+  char* userAgent = getenv( DEFAULT_USER_AGENT_VAR );
+  if( userAgent==NULL )
+    {
+    Warning( "No user agent" );
+    return NULL;
+    }
+  char* userAgentHash = SimpleHash( userAgent, USER_AGENT_HASH_LEN );
+
   char* userID = NULL;
-  int err = GetIdentityFromCookie( cookie, &userID, remoteAddr, key );
+  int err = GetIdentityFromCookie( cookie, &userID, remoteAddr, userAgentHash, key );
   if( err )
     {
     Warning( "GetIdentityFromCookie failed - %d", err );
