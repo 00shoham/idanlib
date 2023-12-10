@@ -7,6 +7,22 @@
 #define HTPASSWDBIN "/usr/bin/htpasswd"
 #define TIMEOUT_ATTEMPT 1
 #define TIMEOUT_MAX 5
+#define MAX_PASSWORD_LENGTH 50
+
+int IsValidPassword( char* str )
+  {
+  if( EMPTY( str ) )
+    return -1;
+
+  while( *str )
+    {
+    if( !isprint( *str ) )
+      return -2;
+    ++str;
+    }
+
+  return 0;
+  }
 
 int HTPasswdValidUser( char* lockPath, char* passwdFile, char* userID )
   {
@@ -73,6 +89,13 @@ int HTPasswdValidUser( char* lockPath, char* passwdFile, char* userID )
 
 int HTPasswdAddUser( char* lockPath, char* passwdFile, char* userID, char* password )
   {
+  if( EMPTY( passwdFile ) )
+    return -1;
+  if( EMPTY( userID ) )
+    return -2;
+  if( IsValidPassword( password ) !=0 )
+    return -3;
+
   int err = 0;
   int lockFD = 0;
 
@@ -123,6 +146,11 @@ int HTPasswdAddUser( char* lockPath, char* passwdFile, char* userID, char* passw
 
 int HTPasswdRemoveUser( char* lockPath, char* passwdFile, char* userID )
   {
+  if( EMPTY( passwdFile ) )
+    return -1;
+  if( EMPTY( userID ) )
+    return -2;
+
   int err = 0;
   int lockFD = 0;
 
@@ -169,6 +197,13 @@ int HTPasswdRemoveUser( char* lockPath, char* passwdFile, char* userID )
 
 int HTPasswdResetPassword( char* lockPath, char* passwdFile, char* userID, char* password )
   {
+  if( EMPTY( passwdFile ) )
+    return -1;
+  if( EMPTY( userID ) )
+    return -2;
+  if( IsValidPassword( password ) !=0 )
+    return -3;
+
   int err = 0;
   int lockFD = 0;
 
@@ -218,6 +253,13 @@ int HTPasswdResetPassword( char* lockPath, char* passwdFile, char* userID, char*
 
 int HTPasswdCheckPassword( char* lockPath, char* passwdFile, char* userID, char* password )
   {
+  if( EMPTY( passwdFile ) )
+    return -1;
+  if( EMPTY( userID ) )
+    return -2;
+  if( IsValidPassword( password ) !=0 )
+    return -3;
+
   int err = 0;
   int lockFD = 0;
 
@@ -280,6 +322,15 @@ int HTPasswdCheckPassword( char* lockPath, char* passwdFile, char* userID, char*
 
 int HTPasswdChangePassword( char* lockPath, char* passwdFile, char* userID, char* oldp, char* newp )
   {
+  if( EMPTY( passwdFile ) )
+    return -1;
+  if( EMPTY( userID ) )
+    return -2;
+  if( IsValidPassword( oldp ) !=0 )
+    return -3;
+  if( IsValidPassword( newp ) !=0 )
+    return -3;
+
   int err = 0;
   int lockFD = 0;
 
