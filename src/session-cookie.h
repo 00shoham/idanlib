@@ -7,11 +7,15 @@
 
 extern char **environ;
 
+void ClearCookie( char* cookie );
+void ClearSessionCookie();
+char* GetCookieFromEnvironment( char* cookie );
+char* GetSessionCookieFromEnvironment();
+
 char* EncodeIdentityInCookie( char* userID, char* remoteAddr, long ttlSeconds, uint8_t* key );
 int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, uint8_t* key );
 int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, uint8_t* key );
 void ClearSessionCookie();
-char* GetSessionCookieFromEnvironment();
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key );
 
 #endif

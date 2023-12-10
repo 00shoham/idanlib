@@ -1,5 +1,66 @@
 #include "utils.h"
 
+void ClearCookie( char* cookie )
+  { 
+  printf( "Set-Cookie: %s=; Max-Age=-1\n", cookie );
+  }
+
+void ClearSessionCookie()
+  { 
+  ClearCookie( COOKIE_ID  );
+  }
+
+char* GetCookieFromEnvironment( char* cookie )
+  {
+  if( EMPTY( cookie ) )
+    {
+    Warning( "Cannot GetCookieFromEnvironment() without specifying a cookie" );
+    return NULL;
+    }
+
+  int l = strlen( HTTP_COOKIE_PREFIX );
+  char* cookies = NULL;
+  for( int i=0; environ[i]!=NULL; ++i )
+    {
+    char* env = environ[i];
+    if( *env!=0 && strncmp( env, HTTP_COOKIE_PREFIX, l )==0 && env[l]=='=' )
+      {
+      cookies = env + l + 1;
+      break;
+      }
+    }
+
+  if( cookies==NULL )
+    {
+    /* no HTTP cookies were provided by the web server */
+    return NULL;
+    }
+
+  char* ptr = NULL;
+  l = strlen( cookie );
+  char* myCookies = strdup( cookies );
+  for( char* token = strtok_r( myCookies, ";", &ptr ); token!=NULL; token = strtok_r( NULL, ";", &ptr ) )
+    {
+    while( (*token)==' ' )
+      ++token;
+
+    if( strncasecmp( token, cookie, l )==0 && *(token+l)=='=' )
+      {
+      char* thisCookie = strdup(token + l + 1); 
+      free( myCookies );
+      return thisCookie;
+      }
+    }
+  free( myCookies );
+
+  return NULL;
+  }
+
+char* GetSessionCookieFromEnvironment()
+  {
+  return GetCookieFromEnvironment( COOKIE_ID );
+  }
+
 char* EncodeIdentityInCookie( char* userID, char* remoteAddr, long ttlSeconds, uint8_t* key )
   {
   if( EMPTY( userID ) || EMPTY( remoteAddr) || EMPTY( key ) || ttlSeconds<=0 )
@@ -160,29 +221,6 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   free( cookie );
 
   return 0;
-  }
-
-void ClearSessionCookie()
-  { 
-  printf( "Set-Cookie: %s=; Max-Age=-1\n", COOKIE_ID );
-  }
-
-char* GetSessionCookieFromEnvironment()
-  {
-  char cookiePrefix[BUFLEN];
-  snprintf( cookiePrefix, sizeof(cookiePrefix)-1, "%s=%s=",
-            HTTP_COOKIE_PREFIX, COOKIE_ID );
-
-  int l = strlen( cookiePrefix );
-  for( int i=0; environ[i]!=NULL; ++i )
-    {
-    char* env = environ[i];
-    if( *env!=0 && strncmp( env, cookiePrefix, l )==0 )
-      {
-      return env + l;
-      }
-    }
-  return NULL;
   }
 
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
