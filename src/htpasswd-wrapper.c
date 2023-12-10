@@ -104,9 +104,7 @@ int HTPasswdAddUser( char* lockPath, char* passwdFile, char* userID, char* passw
   char passwdNewline[BUFLEN];
   snprintf( passwdNewline, sizeof(passwdNewline), "%s\n", password );
 
-  Notice( "Running command [%s] with input line [%s]", cmd, passwdNewline );
   err = WriteLineToCommand( cmd, passwdNewline, 1/*sec poll*/, 5/*sec max*/ );
-  Notice( "Command returned %d", err );
 
   end:
   if( lockFD )
@@ -261,7 +259,10 @@ int HTPasswdCheckPassword( char* lockPath, char* passwdFile, char* userID, char*
   snprintf( goodResponse, sizeof(goodResponse)-1, "Password for user %s correct.\n", userID );
 
   if( strcmp( response, goodResponse )!=0 )
+    {
+    Warning( "htpasswd validation - response was %s", response );
     err = -10;
+    }
 
   end:
   if( lockFD )
