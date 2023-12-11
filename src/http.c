@@ -984,7 +984,7 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
 /* QQQ
  * add parameters.
  * char* hostVarName, char* reqVarName - for getting my url on non-apache servers.
- * char* auth2caller URL where it's not just /cgi-bin/auth2caller
+ * char* auth2cookie URL where it's not just /cgi-bin/auth2cookie
  */
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* envVarName, char* cookieVarName,
@@ -1005,23 +1005,29 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
       APIError( "API basics", -1, "Configuration problem: what env variable carries the user ID and/or authentication cookie?" );
     }
 
+  char* userName = NULL;
+
   char* cookieValue = GetCookieFromEnvironment( cookieVar );
   if( NOTEMPTY( cookieValue ) )
-    { /* try auth with the cookie first */
-    char* userName = GetValidatedUserIDFromHttpHeaders( key );
-    if( NOTEMPTY( userName ) )
-      return userName;
-    char* myURL = FullRequestURL( NULL, NULL );
-    char* encURL = URLEncode( myURL );
+    userName = GetValidatedUserIDFromHttpHeaders( key );
+
+  if( NOTEMPTY( userName ) )
+    return userName;
+
+  if( NOTEMPTY( cookieVar ) )
+    { /* there is a cookie but we don't know who the user is. */
+    char* myURL = MyRelativeRequestURL( NULL );
+    /* QQQ bring back encoding later char* encURL = URLEncode( myURL ); */
     char gotoURL[BUFLEN];
-    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2caller?URL=%s", encURL );
+    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2cookie?URL=%s", myURL );
     free( myURL );
-    free( encURL );
+    /* free( encURL ); */
     RedirectToUrl( gotoURL );
     exit(0);
     }
 
-  char* userName = getenv( userVar );
+  userName = getenv( userVar );
+
   if( EMPTY( userName ) )
     {
     if( cm==cm_ui )
@@ -1453,6 +1459,21 @@ int IsURLEncoded( char* string )
   return -3;
   }
 
+char* MyRelativeRequestURL( char* reqVarName )
+  {
+  char* reqVar = EMPTY( reqVarName ) ? DEFAULT_REQUEST_URI_ENV_VAR : reqVarName;
+
+  char* uri = getenv( reqVar );
+  if( EMPTY( uri ) )
+    Error( "Failed to get request URI from env var %s" , reqVar );
+
+  char url[BUFLEN];
+  snprintf( url, sizeof(url)-1, "%s%s",
+            uri[0]=='/' ? "" : "/", uri );
+
+  return strdup( url );
+  }
+
 char* FullRequestURL( char* hostVarName, char* reqVarName )
   {
   char* hostVar = EMPTY( hostVarName ) ? DEFAULT_HTTP_HOST_ENV_VAR : hostVarName;
@@ -1475,6 +1496,8 @@ char* FullRequestURL( char* hostVarName, char* reqVarName )
 
 void RedirectToUrl( char* url )
   {
+  /* QQQ only url decode bit before ? mark */
+
   int decoded = 0;
   char* passUrl = url;
   if( IsURLEncoded( url )==0 )
@@ -1483,6 +1506,7 @@ void RedirectToUrl( char* url )
     decoded = 1;
     }
 
+  printf( "Status: 302\n" );
   printf( "Location: %s\n", passUrl );
   printf( "Content-Type: text/html\r\n\r\n" );
   printf( "<html>\n" );

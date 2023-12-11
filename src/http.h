@@ -88,6 +88,7 @@ char* URLDecode( char* encoded );
 int IsURLEncoded( char* string ); /* 0==true */
 
 
+char* MyRelativeRequestURL( char* reqVarName );
 char* FullRequestURL( char* hostVarName, char* reqVarName );
 void RedirectToUrl( char* url );
 
