@@ -41,7 +41,4 @@ int WebTransactionTV( _TAG_VALUE* args,
                       char** errorMsg );
 
 
-char* URLEncode( char* raw );
-char* URLDecode( char* encoded );
-
 #endif

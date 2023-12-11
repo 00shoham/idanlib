@@ -981,6 +981,64 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
   return userName;
   }
 
+/* QQQ
+ * add parameters.
+ * char* hostVarName, char* reqVarName - for getting my url on non-apache servers.
+ * char* auth2caller URL where it's not just /cgi-bin/auth2caller
+ */
+char* ExtractUserIDOrDieEx( enum callMethod cm,
+                            char* envVarName, char* cookieVarName,
+                            uint8_t* key )
+  {
+  char* userVar = EMPTY(envVarName) ? DEFAULT_USER_ENV_VAR : envVarName;
+  char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
+
+  if( EMPTY( userVar ) && EMPTY( cookieVar ) )
+    {
+    if( cm==cm_ui )
+      {
+      printf("Content-Type: text/html\r\n\r\n");
+      printf( "<html><body><b>Configuration problem: what env variable carries the user ID and/or authentication cookie?</b></body></html>\n" );
+      exit(0);
+      }
+    else
+      APIError( "API basics", -1, "Configuration problem: what env variable carries the user ID and/or authentication cookie?" );
+    }
+
+  char* cookieValue = GetCookieFromEnvironment( cookieVar );
+  if( NOTEMPTY( cookieValue ) )
+    { /* try auth with the cookie first */
+    char* userName = GetValidatedUserIDFromHttpHeaders( key );
+    if( NOTEMPTY( userName ) )
+      return userName;
+    char* myURL = FullRequestURL( NULL, NULL );
+    char* encURL = URLEncode( myURL );
+    char gotoURL[BUFLEN];
+    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2caller?URL=%s", encURL );
+    free( myURL );
+    free( encURL );
+    RedirectToUrl( gotoURL );
+    exit(0);
+    }
+
+  char* userName = getenv( userVar );
+  if( EMPTY( userName ) )
+    {
+    if( cm==cm_ui )
+      {
+      printf("Content-Type: text/html\r\n\r\n");
+      printf( "<html><body><b>Cannot discern user name from variable %s</b></body></html>\n", userVar );
+      exit(0);
+      }
+    else
+      {
+      APIError( "API basics", -2, "Cannot discern user name from HTTP variable (%s)", userVar );
+      }
+    }
+
+  return userName;
+  }
+
 int StringMatchesUserIDFormat( char* userID )
   {
   if( EMPTY( userID ) )
@@ -1299,4 +1357,146 @@ int ParsePostData( FILE* stream,
 #endif
 
   return 0;
+  }
+
+extern char* sha1hexdigits;
+
+char* URLEncode( char* raw )
+  {
+  if( EMPTY( raw ) )
+    return raw;
+
+  int l = strlen( raw );
+  char* encoded = (char*)SafeCalloc( l*3+1, sizeof(char), "URL encoded string" );
+  char* dst = encoded;
+
+  for( char* src = raw; *raw!=0; ++raw )
+    {
+    int c = *src;
+    if( c == ' ' )
+      *(dst++) = '+';
+    else if( isalnum( c ) )
+      *(dst++) = c;
+    else
+      {
+      *(dst++) = '%';
+      int h = (c & 0xf0) >> 4;
+      int l = (c & 0x0f);
+      *(dst++) = sha1hexdigits[h];
+      *(dst++) = sha1hexdigits[l];
+      }
+    }
+  *(dst) = 0;
+
+  return encoded;
+  }
+
+char* URLDecode( char* encoded )
+  {
+  if( EMPTY( encoded ) )
+    return encoded;
+
+  int l = strlen( encoded );
+  char* decoded = (char*)SafeCalloc( l, sizeof(char), "URL decoded string" );
+  char* src = encoded;
+  char* dst = decoded;
+  for( ; *src!=0; ++src )
+    {
+    if( *src=='+' )
+      {
+      *(dst++) = ' ';
+      }
+    else if( *src=='%'
+             && isxdigit( *(src+1) )
+             && isxdigit( *(src+2) ) )
+      {
+      int ch = *(++src);
+      int cl = *(++src);
+      int nh = HexDigitNumber( ch );
+      int nl = HexDigitNumber( cl );
+      int byte = nh << 4 | nl;
+      *(dst++) = byte;
+      }
+    else
+      *(dst++) = *src;
+    }
+
+  *dst = 0;
+  return decoded;
+  }
+
+int IsURLEncoded( char* string )
+  {
+  if( EMPTY( string ) )
+    return -1;
+
+  int nEncodedChars = 0;
+  for( char* ptr=string; *ptr!=0; ++ptr )
+    {
+    if( *ptr=='%' )
+      {
+      if( isxdigit( *(ptr+1) ) && isxdigit( *(ptr+2) ) )
+        {
+        ++nEncodedChars;
+        ptr += 2;
+        }
+      else
+        return -2;
+      }
+    else if( *ptr=='+' )
+      ++nEncodedChars;
+    }
+
+  if( nEncodedChars )
+    return 0;
+
+  return -3;
+  }
+
+char* FullRequestURL( char* hostVarName, char* reqVarName )
+  {
+  char* hostVar = EMPTY( hostVarName ) ? DEFAULT_HTTP_HOST_ENV_VAR : hostVarName;
+  char* reqVar = EMPTY( reqVarName ) ? DEFAULT_REQUEST_URI_ENV_VAR : reqVarName;
+
+  char* host = getenv( hostVar );
+  if( EMPTY( host ) )
+    Error( "Failed to get HTTP hostname from env var %s" , hostVar );
+
+  char* uri = getenv( reqVar );
+  if( EMPTY( uri ) )
+    Error( "Failed to get request URI from env var %s" , reqVar );
+
+  char url[BUFLEN];
+  snprintf( url, sizeof(url)-1, "https://%s%s%s",
+            host, uri[0]=='/' ? "" : "/", uri );
+
+  return strdup( url );
+  }
+
+void RedirectToUrl( char* url )
+  {
+  int decoded = 0;
+  char* passUrl = url;
+  if( IsURLEncoded( url )==0 )
+    {
+    passUrl = URLDecode( url );
+    decoded = 1;
+    }
+
+  printf( "Location: %s\n", passUrl );
+  printf( "Content-Type: text/html\r\n\r\n" );
+  printf( "<html>\n" );
+  printf( "  <head>\n" );
+  printf( "    <title>Redirect</title>\n" );
+  printf( "    <link rel=\"stylesheet\" href=\"/auth2cookie/ui.css\"/>\n" );
+  printf( "  </head>\n" );
+  printf( "  <body>\n" );
+  printf( "    <h1>Redirect</h1>\n" );
+  printf( "    <p><a href=\"%s\">Back to %s</a></p>\n", url, url );
+  printf( "  </body>\n" );
+  printf( "</html>\n" );
+  printf( "\n" );
+
+  if( decoded )
+    free( passUrl );
   }
