@@ -1017,11 +1017,11 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
   if( NOTEMPTY( cookieVar ) )
     { /* there is a cookie but we don't know who the user is. */
     char* myURL = MyRelativeRequestURL( NULL );
-    /* QQQ bring back encoding later char* encURL = URLEncode( myURL ); */
+    char* encURL = URLEncode( myURL );
     char gotoURL[BUFLEN];
-    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2cookie?URL=%s", myURL );
+    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2cookie?URL=%s", encURL );
     free( myURL );
-    /* free( encURL ); */
+    free( encURL );
     RedirectToUrl( gotoURL );
     exit(0);
     }
@@ -1376,7 +1376,7 @@ char* URLEncode( char* raw )
   char* encoded = (char*)SafeCalloc( l*3+1, sizeof(char), "URL encoded string" );
   char* dst = encoded;
 
-  for( char* src = raw; *raw!=0; ++raw )
+  for( char* src = raw; *src!=0; ++src )
     {
     int c = *src;
     if( c == ' ' )
@@ -1496,14 +1496,35 @@ char* FullRequestURL( char* hostVarName, char* reqVarName )
 
 void RedirectToUrl( char* url )
   {
-  /* QQQ only url decode bit before ? mark */
+  if( EMPTY( url ) )
+    Error( "Cannot redirect to NULL URL" );
 
   int decoded = 0;
   char* passUrl = url;
-  if( IsURLEncoded( url )==0 )
-    {
-    passUrl = URLDecode( url );
-    decoded = 1;
+
+  char* question = strchr( url, '?' );
+  if( question!=NULL )
+    { /* don't decode the bit after the ? - it could be a url-encoded argument */
+    *question = 0;
+    if( IsURLEncoded( url )==0 )
+      {
+      char* firstBit = URLDecode( url );
+      char bigURL[BUFLEN];
+      snprintf( bigURL, sizeof(bigURL)-1, "%s?%s", firstBit, question+1 );
+      free( firstBit );
+      passUrl = strdup( bigURL );
+      decoded = 1;
+      }
+    /* put the question mark back */
+    *question = '?';
+    }
+  else
+    { /* simple URL - decode the whole thing if necessary */
+    if( IsURLEncoded( url )==0 )
+      {
+      passUrl = URLDecode( url );
+      decoded = 1;
+      }
     }
 
   printf( "Status: 302\n" );
