@@ -6,6 +6,7 @@
 #define DEFAULT_USER_ENV_VAR         "REMOTE_USER"
 #define DEFAULT_REQUEST_URI_ENV_VAR  "REQUEST_URI"
 #define DEFAULT_HTTP_HOST_ENV_VAR    "HTTP_HOST"
+#define DEFAULT_AUTH_URL             "/cgi-bin/auth2cookie"
 
 
 #define LF 10
@@ -78,6 +79,8 @@ void DownloadChunkedStream( int fd, char* fileName );
 char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName );
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* envVarName, char* cookieVarName,
+                            char* envVarMyURI,
+                            char* authURL,
                             uint8_t* key );
 
 int StringMatchesUserIDFormat( char* userID );

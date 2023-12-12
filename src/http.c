@@ -981,17 +981,15 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
   return userName;
   }
 
-/* QQQ
- * add parameters.
- * char* hostVarName, char* reqVarName - for getting my url on non-apache servers.
- * char* auth2cookie URL where it's not just /cgi-bin/auth2cookie
- */
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* envVarName, char* cookieVarName,
+                            char* envVarMyURI,
+                            char* authURL,
                             uint8_t* key )
   {
   char* userVar = EMPTY(envVarName) ? DEFAULT_USER_ENV_VAR : envVarName;
   char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
+  char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
 
   if( EMPTY( userVar ) && EMPTY( cookieVar ) )
     {
@@ -1016,10 +1014,10 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
 
   if( NOTEMPTY( cookieVar ) )
     { /* there is a cookie but we don't know who the user is. */
-    char* myURL = MyRelativeRequestURL( NULL );
+    char* myURL = MyRelativeRequestURL( envVarMyURI );
     char* encURL = URLEncode( myURL );
     char gotoURL[BUFLEN];
-    snprintf( gotoURL, sizeof(gotoURL)-1, "/cgi-bin/auth2cookie?URL=%s", encURL );
+    snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );
     free( myURL );
     free( encURL );
     RedirectToUrl( gotoURL );
