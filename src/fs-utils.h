@@ -16,6 +16,7 @@ long FileSize( const char* path );
 long FileSize2( const char* folder, const char* fileName );
 time_t FileDate( const char* path );
 time_t FileDate2( const char* folder, const char* fileName );
+void FileCopyHandles( FILE* s, FILE* d );
 int FileCopy( const char* src, const char* dst );
 int FileCopy2( const char* srcFolder, const char* srcFile,
                const char* dstFolder, const char* dstFile );

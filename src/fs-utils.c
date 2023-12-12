@@ -551,6 +551,26 @@ long GetAvailableSpaceOnVolumeBytes( char* path )
     }
   }
 
+void FileCopyHandles( FILE* s, FILE* d )
+  {
+  if( s==NULL || d==NULL )
+    Error( "FileCopyHandles requires non-NULL handles" );
+
+  char data[BIGBUF];
+  size_t n = 0;
+  do
+    {
+    n = fread( data, sizeof(char), sizeof(data)-1, s );
+    if( n>0 )
+      {
+      (void)fwrite( data, sizeof(char), n, d );
+      }
+    } while( n>0 );
+
+  fclose( d );
+  fclose( s );
+  }
+
 int FileCopy( const char* src, const char* dst )
   {
   if( EMPTY( src ) )
@@ -580,19 +600,7 @@ int FileCopy( const char* src, const char* dst )
     return -4;
     }
 
-  char data[BIGBUF];
-  size_t n = 0;
-  do
-    {
-    n = fread( data, sizeof(char), sizeof(data)-1, s );
-    if( n>0 )
-      {
-      (void)fwrite( data, sizeof(char), n, d );
-      }
-    } while( n>0 );
-
-  fclose( d );
-  fclose( s );
+  FileCopyHandles( s, d );
 
   return 0;
   }
