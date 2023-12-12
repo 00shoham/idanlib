@@ -982,12 +982,12 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
   }
 
 char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* envVarName, char* cookieVarName,
-                            char* envVarMyURI,
+                            char* userVarName, char* cookieVarName,
+                            char* myUrlVarName,
                             char* authURL,
                             uint8_t* key )
   {
-  char* userVar = EMPTY(envVarName) ? DEFAULT_USER_ENV_VAR : envVarName;
+  char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
   char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
   char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
 
@@ -1014,7 +1014,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
 
   if( NOTEMPTY( cookieVar ) )
     { /* there is a cookie but we don't know who the user is. */
-    char* myURL = MyRelativeRequestURL( envVarMyURI );
+    char* myURL = MyRelativeRequestURL( myUrlVarName );
     char* encURL = URLEncode( myURL );
     char gotoURL[BUFLEN];
     snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );

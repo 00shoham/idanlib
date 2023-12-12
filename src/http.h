@@ -78,8 +78,8 @@ void DownloadChunkedStream( int fd, char* fileName );
 
 char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName );
 char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* envVarName, char* cookieVarName,
-                            char* envVarMyURI,
+                            char* userVarName, char* cookieVarName,
+                            char* myUrlVarName,
                             char* authURL,
                             uint8_t* key );
 
