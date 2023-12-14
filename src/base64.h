@@ -4,5 +4,6 @@
 int ValidBase64String( const char *ascii, int len );
 char* EncodeToBase64( const void* binaryData, int len, int *outputLength );
 unsigned char* DecodeFromBase64( const char* ascii, int len, int *outputLength );
+void RepairBase64( char* suspectString );
 
 #endif

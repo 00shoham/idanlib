@@ -272,3 +272,16 @@ unsigned char* DecodeFromBase64( const char* ascii, int len, int *outputLength )
   return bin;
   }
 
+/* Some implementations use - for + and _ for / - fix that here */
+void RepairBase64( char* suspectString )
+  {
+  for( char* ptr = suspectString; *ptr!=0; ++ptr )
+    {
+    int c = *ptr;
+    if( c=='-' )
+      *ptr = '+';
+    else if( c=='_' )
+      *ptr = '/';
+    }
+  }
+
