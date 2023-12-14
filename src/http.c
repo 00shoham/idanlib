@@ -1492,6 +1492,7 @@ char* FullRequestURL( char* hostVarName, char* reqVarName )
   return strdup( url );
   }
 
+/* QQQ pass in a path for where to find the CSS */
 void RedirectToUrl( char* url )
   {
   if( EMPTY( url ) )
@@ -1535,7 +1536,7 @@ void RedirectToUrl( char* url )
   printf( "  </head>\n" );
   printf( "  <body>\n" );
   printf( "    <h1>Redirect</h1>\n" );
-  printf( "    <p><a href=\"%s\">Back to %s</a></p>\n", url, url );
+  printf( "    <p><a href=\"%s\">Click if not automatically redirected.</a></p>\n", url );
   printf( "  </body>\n" );
   printf( "</html>\n" );
   printf( "\n" );
