@@ -168,7 +168,9 @@ _TAG_VALUE* ParseJSON( const char* string )
   char* tag = NULL;
   char* value = NULL;
 
-  printf( "ParseJSON( %s )\n", NULLPROTECT( string ) );
+  /* DEBUG
+     printf( "ParseJSON( %s )\n", NULLPROTECT( string ) );
+   */
 
   if( EMPTY( string ) )
     {
@@ -185,10 +187,11 @@ _TAG_VALUE* ParseJSON( const char* string )
   for( char* ptr=workingBuffer; *ptr!=0 && ptr<endOfBuffer; ++ptr )
     {
     int c = *ptr;
-    /* DEBUG */
+    /* DEBUG
     printf( "%03d - %03d - %03d - %s - %c\n",
             cNum, (int)(ptr-workingBuffer), (int)(endOfBuffer-ptr),
             ParseStateName(state), c);
+    */
     switch( state )
       {
       case PS_PRE_OPENBR:
@@ -386,8 +389,9 @@ _TAG_VALUE* ParseJSON( const char* string )
           }
         else if( c==OPENBR )
           {
-          /* DEBUG */
-          printf( "Got OPENBR in value\n" );
+          /* DEBUG
+          printf( "Got OPENBR in value\n" )
+          */
           char* inBR = GetBracketedString( ptr );
           if( inBR==NULL )
             {
@@ -396,8 +400,9 @@ _TAG_VALUE* ParseJSON( const char* string )
             return NULL;
             }
           else
-            { /* DEBUG */
+            { /* DEBUG
             printf( "Got bracketed string: [%s]", inBR );
+            */
             }
           /* QQQ problem is here? */
           last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
