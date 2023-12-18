@@ -248,7 +248,6 @@ _TAG_VALUE* ParseJSON( const char* string )
           ptr += strlen( inBR ) - 1;
           free( inBR );
           inBR = NULL;
-          /*QQQ right? */
           value = NULL;
           backSlashStatus = 0;
           state = PS_IN_LIST_PRE_COMMA;
