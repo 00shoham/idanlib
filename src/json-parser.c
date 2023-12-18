@@ -69,21 +69,23 @@ char* ParseStateName( enum parser_state state )
 char* GetBracketedString( char* string )
   {
   char* src = string;
+  char* endString = src + strlen(src);
   int brDepth = 0;
   int sqDepth = 0;
   int inQuote = 0;
   int bsState = 0;
   int c = -1;
-  for( ; *src!=0; ++src )
+  for( ; *src!=0 && src<endString; ++src )
     {
     c = *src;
     if( inQuote )
       {
-      if( c==BS )
-        {
-        bsState = bsState ? 0 : 1;
-        }
-      else if( c==QUOTE && bsState==0 )
+      if( c==BS && ! bsState )
+        bsState = 1;
+      else if( bsState )
+        bsState = 0;
+
+      if( c==QUOTE && bsState==0 )
         {
         inQuote = 0;
         }
@@ -166,7 +168,9 @@ _TAG_VALUE* ParseJSON( const char* string )
   char* tag = NULL;
   char* value = NULL;
 
-  /* printf( "ParseJSON( %s )\n", NULLPROTECT( string ) ); */
+  /* DEBUG
+     printf( "ParseJSON( %s )\n", NULLPROTECT( string ) );
+   */
 
   if( EMPTY( string ) )
     {
@@ -179,13 +183,18 @@ _TAG_VALUE* ParseJSON( const char* string )
   Notice( "ParseJSON(%s)", string );
 
   char* workingBuffer = strdup( string );
+  char* endOfBuffer = workingBuffer + strlen(workingBuffer);
 
   int cNum = 0;
   int backSlashStatus = 0;
-  for( char* ptr=workingBuffer; *ptr!=0; ++ptr )
+  for( char* ptr=workingBuffer; *ptr!=0 && ptr<endOfBuffer; ++ptr )
     {
     int c = *ptr;
-    /* printf("%03d - %s - %c\n", cNum, ParseStateName(state), c); */
+    /* DEBUG
+    printf( "%03d - %03d - %03d - %s - %c\n",
+            cNum, (int)(ptr-workingBuffer), (int)(endOfBuffer-ptr),
+            ParseStateName(state), c);
+    */
     switch( state )
       {
       case PS_PRE_OPENBR:
@@ -205,7 +214,7 @@ _TAG_VALUE* ParseJSON( const char* string )
           }
         else
           {
-          ParseWarning( state, c, cNum, ptr );
+          ParseWarning( state, c, (int)(ptr-workingBuffer), ptr );
           free( workingBuffer );
           FreeTagValue( list );
           return NULL;
@@ -246,9 +255,15 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
+          else
+            { /* DEBUG */
+            /* printf( "Got bracketed string: [%s]", inBR ); */
+            }
           last = NewTagValueList( NULL, ParseJSON( inBR ), NULL, 0 );
           list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
+          /* DEBUG */
+          /* printf( "Pointer moved to position %d", (int)(ptr-workingBuffer) ); */
           free( inBR );
           inBR = NULL;
           value = NULL;
@@ -318,7 +333,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         else if( c==CLOSESQ ) { state = PS_IN_PAIR_PRE_COMMA; }
         else
           {
-          ParseWarning( state, c, cNum, ptr );
+          ParseWarning( state, c, (int)(ptr-workingBuffer), ptr );
           free( workingBuffer );
           FreeTagValue( list );
           return NULL;
@@ -359,7 +374,7 @@ _TAG_VALUE* ParseJSON( const char* string )
           }
         else
           {
-          ParseWarning( state, c, cNum, ptr );
+          ParseWarning( state, c, (int)(ptr-workingBuffer), ptr );
           free( workingBuffer );
           FreeTagValue( list );
           return NULL;
@@ -377,6 +392,9 @@ _TAG_VALUE* ParseJSON( const char* string )
           }
         else if( c==OPENBR )
           {
+          /* DEBUG
+          printf( "Got OPENBR in value\n" )
+          */
           char* inBR = GetBracketedString( ptr );
           if( inBR==NULL )
             {
@@ -384,9 +402,17 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
+          else
+            { /* DEBUG
+            printf( "Got bracketed string: [%s]", inBR );
+            */
+            }
+          /* QQQ problem is here? */
           last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
           list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
+          /* DEBUG */
+          /* printf( "Pointer moved to position %d", (int)(ptr-workingBuffer) ); */
           free( inBR );
           inBR = NULL;
           state = PS_IN_PAIR_PRE_COMMA;
@@ -400,9 +426,15 @@ _TAG_VALUE* ParseJSON( const char* string )
             FreeTagValue( list );
             return NULL;
             }
+          else
+            { /* DEBUG */
+            /* printf( "Got bracketed string: [%s]", inBR ); */
+            }
           last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
           list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
+          /* DEBUG */
+          /* printf( "Pointer moved to position %d", (int)(ptr-workingBuffer) ); */
           free( inBR );
           inBR = NULL;
           state = PS_IN_PAIR_PRE_COMMA;
@@ -447,11 +479,12 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_PAIR_QUOTED_VALUE:
-        if( c==BS )
-          {
-          backSlashStatus = backSlashStatus ? 0 : 1;
-          }
-        else if( c==QUOTE && ! backSlashStatus )
+        if( c==BS && backSlashStatus==0 )
+          backSlashStatus = 1;
+        else if( backSlashStatus )
+          backSlashStatus = 0;
+
+        if( c==QUOTE && ! backSlashStatus )
           {
           *ptr = 0;
           last = NewTagValue( tag, value, NULL, 0 );
@@ -466,7 +499,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         else if( c==CLOSEBR ) { state = PS_PRE_OPENBR; }
         else
           {
-          ParseWarning( state, c, cNum, ptr );
+          ParseWarning( state, c, (int)(ptr-workingBuffer), ptr );
           free( workingBuffer );
           FreeTagValue( list );
           return NULL;
