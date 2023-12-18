@@ -4,6 +4,7 @@
 #define OPENBR '{'
 #define CLOSEBR '}'
 
+char* GetBracketedString( char* string );
 _TAG_VALUE* ParseJSON( const char* string );
 int CompareJSON( const char* jsonA, const char* jsonB,
                  _TAG_VALUE* tagsToDelete );
