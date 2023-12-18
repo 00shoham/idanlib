@@ -179,9 +179,6 @@ _TAG_VALUE* ParseJSON( const char* string )
     return NULL;
     }
 
-  /* DEBUG */
-  Notice( "ParseJSON(%s)", string );
-
   char* workingBuffer = strdup( string );
   char* endOfBuffer = workingBuffer + strlen(workingBuffer);
 
