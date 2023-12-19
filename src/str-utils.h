@@ -32,5 +32,8 @@ char* StrDupIfNotNull( char* str );
 int HexDigitNumber( int c );
 char* EscapeString( uint8_t* rawString, size_t rawLen, char* buf, size_t buflen );
 uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen );
+char* SimpleHash( char* string, int nBytes );
+int IsUnicodeMarkup( char* raw );
+char* UnescapeUnicodeMarkup( char* raw );
 
 #endif

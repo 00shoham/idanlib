@@ -2,27 +2,6 @@
 
 #define USER_AGENT_HASH_LEN 4
 
-char* SimpleHash( char* string, int nBytes )
-  {
-  if( EMPTY( string ) )
-    return NULL;
-  if( nBytes<1 || nBytes>8 )
-    Error( "SimpleHash() - 1-8 bytes" );
-
-  uint8_t* raw = (uint8_t*)string;
-  uint8_t* hash = (uint8_t*)SafeCalloc( nBytes + 1, sizeof(uint8_t), "Hash" );
-  for( int i=0; string[i]!=0; ++i )
-    hash[ i%nBytes ] ^= raw[i];
-
-  int encLen = 0;
-  char* encoded = EncodeToBase64( hash, nBytes, &encLen );
-  if( encLen<=0 )
-    Error( "Failed to EncodeToBase64 in SimpleHash" );
-  free( hash );
-
-  return encoded;
-  }
-
 void ClearCookie( char* cookie )
   { 
   printf( "Set-Cookie: %s=; Max-Age=-1\n", cookie );

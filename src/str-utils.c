@@ -624,3 +624,89 @@ uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen )
 
   return dst;
   }
+
+char* SimpleHash( char* string, int nBytes )
+  {
+  if( EMPTY( string ) )
+    return NULL;
+  if( nBytes<1 || nBytes>8 )
+    Error( "SimpleHash() - 1-8 bytes" );
+
+  uint8_t* raw = (uint8_t*)string;
+  uint8_t* hash = (uint8_t*)SafeCalloc( nBytes + 1, sizeof(uint8_t), "Hash" );
+  for( int i=0; string[i]!=0; ++i )
+    hash[ i%nBytes ] ^= raw[i];
+
+  int encLen = 0;
+  char* encoded = EncodeToBase64( hash, nBytes, &encLen );
+  if( encLen<=0 )
+    Error( "Failed to EncodeToBase64 in SimpleHash" );
+  free( hash );
+
+  return encoded;
+  }
+
+int IsUnicodeMarkup( char* raw )
+  {
+  if( EMPTY( raw ) )
+    return -1;
+  if( strstr( raw, "\\/" )!=NULL )
+    return 0;
+  if( strstr( raw, "\\u" )!=NULL )
+    return 0;
+  return -2;
+  }
+
+char* UnescapeUnicodeMarkup( char* raw )
+  {
+  if( EMPTY( raw ) )
+    return NULL;
+
+  int l = strlen( raw );
+  char* clean = (char*)SafeCalloc( l+1, sizeof(char), "Text free of Unicode escapes" );
+
+  char* src = NULL;
+  char* dst = NULL;
+
+  for( src=raw, dst=clean; *src!=0; )
+    {
+    int c = *src;
+    if( c=='\\' )
+      {
+      ++src;
+      int n = *src;
+      if( n=='u' )
+        {
+        int x4 = *(++src);
+        int x3 = *(++src);
+        int x2 = *(++src);
+        int x1 = *(++src);
+        if( isxdigit( x4 ) && isxdigit( x3 ) && isxdigit( x2 ) && isxdigit( x1 ) )
+          {
+          if( x4=='0' && x3=='0' )
+            *(dst++) = HexDigitNumber( x2 ) << 4 | HexDigitNumber( x1 );
+          else
+            {
+            *(dst++) = '%';
+            *(dst++) = x4;
+            *(dst++) = x3;
+            *(dst++) = '%';
+            *(dst++) = x2;
+            *(dst++) = x1;
+            }
+          ++src;
+          }
+        else
+          Error( "UnescapeUnicode() - unhandled case - \\u not followed by 4 hex digits" );
+        }
+      else
+        *(dst++) = *(src++);
+      }
+    else
+      *(dst++) = *(src++);
+    }
+
+  *dst = 0;
+
+  return clean;
+  }
