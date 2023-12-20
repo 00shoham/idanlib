@@ -184,6 +184,8 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
         Warning( "Session expired" );
         return -9;
         }
+      Notice( "Cookie expires at %08lx (%ds in future)",
+              (long)expT, (int)(expT - tNow) );
       gotTime = 1;
       }
     else if( EMPTY( line ) )
