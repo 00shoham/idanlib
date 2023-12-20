@@ -96,10 +96,34 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, l
 
 int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* userAgent, uint8_t* key )
   {
-  if( EMPTY( cookie ) || userID==NULL || EMPTY( remoteAddr) || EMPTY( key ) )
+  if( EMPTY( cookie ) )
     {
-    Warning( "Invalid arguments to ValidateIdentityFromCookie" );
+    Warning( "Invalid arguments to GetIdentityFromCookie - no cookie" );
     return -1;
+    }
+
+  if( userID==NULL )
+    {
+    Warning( "Invalid arguments to GetIdentityFromCookie - no return PTR" );
+    return -2;
+    }
+
+  if( EMPTY( remoteAddr ) )
+    {
+    Warning( "Invalid arguments to GetIdentityFromCookie - no remoteAddr" );
+    return -3;
+    }
+
+  if( EMPTY( userAgent ) )
+    {
+    Warning( "Invalid arguments to GetIdentityFromCookie - no userAgent" );
+    return -4;
+    }
+
+  if( key==NULL )
+    {
+    Warning( "Invalid arguments to GetIdentityFromCookie - no key" );
+    return -5;
     }
 
   uint8_t* plaintext = NULL;
@@ -157,9 +181,18 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
         Warning( "Empty UAGT in session cookie" );
         return -5;
         }
-      if( strcmp( uAgent, userAgent )!=0 )
+      char* hash = NULL;
+      if( userAgent!=NULL )
+        hash = SimpleHash( userAgent, USER_AGENT_HASH_LEN );
+
+      if( strcmp( uAgent, userAgent )==0 )
+        { /* okay - plaintext user agent the same */ }
+      else if( hash!=NULL && strcmp( uAgent, hash )==0)
+        { /* okay - hash user agent the same */ }
+      else
         {
-        Warning( "User has changed user agent (from %s to %s)", userAgent, uAgent );
+        Warning( "User has changed user agent (from %s to %s / %s)",
+                 userAgent, uAgent, NULLPROTECT( hash ) );
         return -6;
         }
       gotUagt = 1;
@@ -277,6 +310,8 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
     Warning( "No remote address" );
     return NULL;
     }
+  else
+    Notice( "GetValidatedUserIDFromHttpHeaders() - remoteAddr == [%s]", NULLPROTECT( remoteAddr ) );
 
   char* userAgent = getenv( DEFAULT_USER_AGENT_VAR );
   if( userAgent==NULL )
