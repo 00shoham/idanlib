@@ -67,12 +67,15 @@ void mysyslog( int level, const char* prefix, const char* msg )
   else
     {
     LOCK_MUTEX
-    fputs( longtime, stdout );
+    FILE* where = stdout;
+    if( logFileHandle!=NULL )
+      where = logFileHandle;
+    fputs( longtime, where );
     if( NOTEMPTY( parsingLocation ) )
-      fputs( parsingLocation, stdout );
-    fputs( msg, stdout );
-    fputs( "\n", stdout );
-    fflush( stdout );
+      fputs( parsingLocation, where );
+    fputs( msg, where );
+    fputs( "\n", where );
+    fflush( where );
     UNLOCK_MUTEX
     }
   }
@@ -83,7 +86,7 @@ void Error( const char* fmt, ... )
   char buf[BIGBUF];
 
   va_start( arglist, fmt );
-  vsnprintf( buf, sizeof(buf), fmt, arglist );
+  vsnprintf( buf, sizeof(buf)-1, fmt, arglist );
   va_end( arglist );
 
   if( inCGI>1 )
@@ -133,7 +136,7 @@ void Warning( const char* fmt, ... )
   char buf[BIGBUF];
 
   va_start( arglist, fmt );
-  vsnprintf( buf, sizeof(buf), fmt, arglist );
+  vsnprintf( buf, sizeof(buf)-1, fmt, arglist );
   va_end( arglist );
 
   mysyslog( LOG_USER|LOG_WARNING, "WARNING", buf );
@@ -146,7 +149,7 @@ void Notice( const char* fmt, ... )
   char buf[BIGBUF];
 
   va_start( arglist, fmt );
-  vsnprintf( buf, sizeof(buf), fmt, arglist );
+  vsnprintf( buf, sizeof(buf)-1, fmt, arglist );
   va_end( arglist );
 
   mysyslog( LOG_USER|LOG_NOTICE, "NOTICE", buf );
