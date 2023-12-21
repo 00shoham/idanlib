@@ -325,6 +325,11 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
     time_t tExpiry = tNow + duration;
     if( tExpiry > expiry )
       {
+      Notice( "Extending session of %s on Hash(%s) at %s by %d seconds",
+          NULLPROTECT( userID ),
+          NULLPROTECT( userAgentHash ),
+          NULLPROTECT( remoteAddr ),
+          (int)(tExpiry - expiry) );
       err = PrintSessionCookie( userID, duration, DEFAULT_REMOTE_ADDR, DEFAULT_USER_AGENT_VAR, key );
       }
     }
