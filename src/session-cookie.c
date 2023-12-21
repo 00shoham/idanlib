@@ -313,11 +313,20 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
                                    remoteAddr, userAgentHash,
                                    key );
 
-  /* QQQ possibly write updated expiry back to cookie */
   if( err )
     {
     Warning( "GetIdentityFromCookie failed - %d", err );
     return NULL;
+    }
+
+  if( expiry>0 && duration>0 )
+    { /* QQQ possibly write updated expiry back to cookie */
+    time_t tNow = time(NULL);
+    time_t tExpiry = tNow + duration;
+    if( tExpiry > expiry )
+      {
+      err = PrintSessionCookie( userID, duration, DEFAULT_REMOTE_ADDR, DEFAULT_USER_AGENT_VAR, key );
+      }
     }
 
   return userID;
