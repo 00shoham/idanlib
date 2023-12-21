@@ -158,6 +158,9 @@ int Base64DecodeDecryptAES256( char* base64cipher,
   uint8_t* plaintext = NULL;
   int err = DecryptAES256( rawEncrypted, rawLen, key, keyLen,
                            &plaintext, &plainlen );
+
+  free( rawEncrypted );
+
   if( err )
     return err;
 

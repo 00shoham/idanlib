@@ -45,7 +45,7 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, l
   if( err || EMPTY( crypto ) || cryptoLen==0 )
     Error( "Failed to encrypt session state: %d", err );
 
-  return strdup( crypto );
+  return crypto;
   }
 
 int GetIdentityFromCookie( char* cookie, char** userPtr,
@@ -111,6 +111,7 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( EMPTY( pUser ) )
         {
         Warning( "Empty USER in session cookie" );
+        free( plaintext );
         return -6;
         }
       *userPtr = strdup( pUser );
@@ -122,11 +123,13 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( EMPTY( pAddr ) )
         {
         Warning( "Empty ADDR in session cookie" );
+        free( plaintext );
         return -7;
         }
       if( strcmp( pAddr, remoteAddr )!=0 )
         {
         Warning( "User has moved - IP changed (from %s to %s)", remoteAddr, pAddr );
+        free( plaintext );
         /* just a warning -- return -4; */
         }
       gotAddr = 1;
@@ -137,6 +140,7 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( EMPTY( uAgent ) )
         {
         Warning( "Empty UAGT in session cookie" );
+        free( plaintext );
         return -8;
         }
       char* hash = NULL;
@@ -151,8 +155,15 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
         {
         Warning( "User has changed user agent (from %s to %s / %s)",
                  userAgent, uAgent, NULLPROTECT( hash ) );
+        if( hash )
+          free( hash );
+        free( plaintext );
         return -9;
         }
+
+      if( hash )
+        free( hash );
+
       gotUagt = 1;
       }
     else if( strncmp( line, "EXPT:", 5 )==0 )
@@ -161,12 +172,14 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( EMPTY( pTime ) )
         {
         Warning( "Empty EXPT in session cookie" );
+        free( plaintext );
         return -10;
         }
       long expT = 0;
       if( sscanf( pTime, "%ld", &expT )!=1 )
         {
         Warning( "Invalid EXPT (%s) in session cookie", pTime );
+        free( plaintext );
         return -11;
         }
       if( expiryPtr != NULL )
@@ -177,6 +190,7 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( (long)tNow >= expT )
         {
         Warning( "Session expired" );
+        free( plaintext );
         return -12;
         }
       Notice( "Cookie expires at %08lx (%ds in future)",
@@ -189,12 +203,14 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( EMPTY( pTime ) )
         {
         Warning( "Empty DRTN in session cookie" );
+        free( plaintext );
         return -13;
         }
       long duration = 0;
       if( sscanf( pTime, "%ld", &duration )!=1 )
         {
         Warning( "Invalid DRTN (%s) in session cookie", pTime );
+        free( plaintext );
         return -14;
         }
       if( durationPtr!=NULL && duration>0 )
@@ -203,37 +219,46 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       /* gotDrtn = 1; */
       }
     else if( EMPTY( line ) )
-      { /* whatever */ }
+      { /* whatever */
+      }
     else
       {
       Warning( "Unexpected line in session state: %s", line );
+      free( plaintext );
       return -15;
       }
     }
 
   if( gotUser && gotAddr && gotExpr && gotUagt )
+    {
+    free( plaintext );
     return 0;
+    }
 
   if( ! gotUser )
     {
     Warning( "Session state does not specify the user" );
+    free( plaintext );
     return -16;
     }
 
   if( ! gotAddr )
     {
     Warning( "Session state does not specify the address" );
+    free( plaintext );
     return -17;
     }
 
   if( ! gotUagt )
     {
     Warning( "Session state does not specify the user agent" );
+    free( plaintext );
     return -18;
     }
 
   /* gotTime must be 0 to reach this */
   Warning( "Session state does not specify the expiry time" );
+  free( plaintext );
   return -19;
   }
 
@@ -272,6 +297,9 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
 
   printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", COOKIE_ID, cookie, ttlSeconds);
   free( cookie );
+
+  if( userAgentHash )
+    free( userAgentHash );
 
   return 0;
   }
@@ -316,6 +344,8 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
   if( err )
     {
     Warning( "GetIdentityFromCookie failed - %d", err );
+    if( userAgentHash )
+      free( userAgentHash );
     return NULL;
     }
 
@@ -333,6 +363,9 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
       err = PrintSessionCookie( userID, duration, DEFAULT_REMOTE_ADDR, DEFAULT_USER_AGENT_VAR, key );
       }
     }
+
+  if( userAgentHash )
+    free( userAgentHash );
 
   return userID;
   }
@@ -364,6 +397,9 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
   char* cookieValue = GetCookieFromEnvironment( cookieVar );
   if( NOTEMPTY( cookieValue ) )
     userName = GetValidatedUserIDFromHttpHeaders( key, cookieValue );
+
+  if( cookieValue!=NULL )
+    free( cookieValue );
 
   if( NOTEMPTY( userName ) )
     return userName;
