@@ -57,6 +57,8 @@ int GetArgumentFromQueryString( char** bufPtr, char* keyword, char* regExp );
 char* GetWebUser();
 char* GetWebGroup();
 
+char* GetCookieFromEnvironment( char* cookie );
+
 char* RemoveURLEncoding( char* src, char* dst );
 _TAG_VALUE* ParseQueryString( _TAG_VALUE* list, char* string );
 
@@ -77,11 +79,6 @@ void DownloadFile( long filesize, char* path, char* fileName );
 void DownloadChunkedStream( int fd, char* fileName );
 
 char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName );
-char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* userVarName, char* cookieVarName,
-                            char* myUrlVarName,
-                            char* authURL,
-                            uint8_t* key );
 
 int StringMatchesUserIDFormat( char* userID );
 

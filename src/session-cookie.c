@@ -12,52 +12,6 @@ void ClearSessionCookie()
   ClearCookie( COOKIE_ID  );
   }
 
-char* GetCookieFromEnvironment( char* cookie )
-  {
-  if( EMPTY( cookie ) )
-    {
-    Warning( "Cannot GetCookieFromEnvironment() without specifying a cookie" );
-    return NULL;
-    }
-
-  int l = strlen( HTTP_COOKIE_PREFIX );
-  char* cookies = NULL;
-  for( int i=0; environ[i]!=NULL; ++i )
-    {
-    char* env = environ[i];
-    if( *env!=0 && strncmp( env, HTTP_COOKIE_PREFIX, l )==0 && env[l]=='=' )
-      {
-      cookies = env + l + 1;
-      break;
-      }
-    }
-
-  if( cookies==NULL )
-    {
-    /* no HTTP cookies were provided by the web server */
-    return NULL;
-    }
-
-  char* ptr = NULL;
-  l = strlen( cookie );
-  char* myCookies = strdup( cookies );
-  for( char* token = strtok_r( myCookies, ";", &ptr ); token!=NULL; token = strtok_r( NULL, ";", &ptr ) )
-    {
-    while( (*token)==' ' )
-      ++token;
-
-    if( strncasecmp( token, cookie, l )==0 && *(token+l)=='=' )
-      {
-      char* thisCookie = strdup(token + l + 1); 
-      free( myCookies );
-      return thisCookie;
-      }
-    }
-  free( myCookies );
-
-  return NULL;
-  }
-
 char* GetSessionCookieFromEnvironment()
   {
   return GetCookieFromEnvironment( COOKIE_ID );
@@ -79,8 +33,8 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, l
   time_t tEnd = tNow + ttlSeconds;
 
   char plaintext[BUFLEN];
-  snprintf( plaintext, sizeof(plaintext)-1, "USER:%s\nADDR:%s\nUAGT:%s\nEXPT:%ld\n",
-            userID, remoteAddr, userAgent, (long)tEnd );
+  snprintf( plaintext, sizeof(plaintext)-1, "USER:%s\nADDR:%s\nUAGT:%s\nEXPT:%ld\nDRTN:%ld\n",
+            userID, remoteAddr, userAgent, (long)tEnd, (long)ttlSeconds );
 
   char* crypto = NULL;
   int cryptoLen = 0;
@@ -94,7 +48,10 @@ char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, l
   return strdup( crypto );
   }
 
-int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* userAgent, uint8_t* key )
+int GetIdentityFromCookie( char* cookie, char** userPtr,
+                           long* expiryPtr, long* durationPtr,
+                           char* remoteAddr, char* userAgent,
+                           uint8_t* key )
   {
   if( EMPTY( cookie ) )
     {
@@ -102,7 +59,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
     return -1;
     }
 
-  if( userID==NULL )
+  if( userPtr==NULL )
     {
     Warning( "Invalid arguments to GetIdentityFromCookie - no return PTR" );
     return -2;
@@ -141,7 +98,8 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
   int gotUser = 0;
   int gotAddr = 0;
   int gotUagt = 0;
-  int gotTime = 0;
+  int gotExpr = 0;
+  /* int gotDrtn = 0; */
 
   char* ptr = NULL;
   for( char* line = strtok_r( (char*)plaintext, "\r\n", &ptr );
@@ -153,9 +111,9 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
       if( EMPTY( pUser ) )
         {
         Warning( "Empty USER in session cookie" );
-        return -2;
+        return -6;
         }
-      *userID = strdup( pUser );
+      *userPtr = strdup( pUser );
       gotUser = 1;
       }
     else if( strncmp( line, "ADDR:", 5 )==0 )
@@ -164,7 +122,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
       if( EMPTY( pAddr ) )
         {
         Warning( "Empty ADDR in session cookie" );
-        return -3;
+        return -7;
         }
       if( strcmp( pAddr, remoteAddr )!=0 )
         {
@@ -179,7 +137,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
       if( EMPTY( uAgent ) )
         {
         Warning( "Empty UAGT in session cookie" );
-        return -5;
+        return -8;
         }
       char* hash = NULL;
       if( userAgent!=NULL )
@@ -193,7 +151,7 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
         {
         Warning( "User has changed user agent (from %s to %s / %s)",
                  userAgent, uAgent, NULLPROTECT( hash ) );
-        return -6;
+        return -9;
         }
       gotUagt = 1;
       }
@@ -202,58 +160,81 @@ int GetIdentityFromCookie( char* cookie, char** userID, char* remoteAddr, char* 
       char* pTime = line + 5;
       if( EMPTY( pTime ) )
         {
-        Warning( "Empty ADDR in session cookie" );
-        return -7;
+        Warning( "Empty EXPT in session cookie" );
+        return -10;
         }
       long expT = 0;
       if( sscanf( pTime, "%ld", &expT )!=1 )
         {
         Warning( "Invalid EXPT (%s) in session cookie", pTime );
-        return -8;
+        return -11;
+        }
+      if( expiryPtr != NULL )
+        {
+        *expiryPtr = expT;
         }
       time_t tNow = time(NULL);
       if( (long)tNow >= expT )
         {
         Warning( "Session expired" );
-        return -9;
+        return -12;
         }
       Notice( "Cookie expires at %08lx (%ds in future)",
               (long)expT, (int)(expT - tNow) );
-      gotTime = 1;
+      gotExpr = 1;
+      }
+    else if( strncmp( line, "DRTN:", 5 )==0 )
+      {
+      char* pTime = line + 5;
+      if( EMPTY( pTime ) )
+        {
+        Warning( "Empty DRTN in session cookie" );
+        return -13;
+        }
+      long duration = 0;
+      if( sscanf( pTime, "%ld", &duration )!=1 )
+        {
+        Warning( "Invalid DRTN (%s) in session cookie", pTime );
+        return -14;
+        }
+      if( durationPtr!=NULL && duration>0 )
+        *durationPtr = duration;
+      Notice( "Cookie duration is %ld seconds", duration );
+      /* gotDrtn = 1; */
       }
     else if( EMPTY( line ) )
       { /* whatever */ }
     else
       {
       Warning( "Unexpected line in session state: %s", line );
-      return -10;
+      return -15;
       }
     }
 
-  if( gotUser && gotAddr && gotTime && gotUagt )
+  if( gotUser && gotAddr && gotExpr && gotUagt )
     return 0;
 
   if( ! gotUser )
     {
     Warning( "Session state does not specify the user" );
-    return -9;
+    return -16;
     }
 
   if( ! gotAddr )
     {
     Warning( "Session state does not specify the address" );
-    return -10;
+    return -17;
     }
 
   if( ! gotUagt )
     {
     Warning( "Session state does not specify the user agent" );
-    return -11;
+    return -18;
     }
 
   /* gotTime must be 0 to reach this */
-  Warning( "Session state does not specify the time" );
-  return -12;
+  Warning( "Session state does not specify the expiry time" );
+  return -19;
   }
 
 int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key )
@@ -295,13 +276,16 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   return 0;
   }
 
-char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
+char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
   {
-  char* cookie = GetSessionCookieFromEnvironment();
-  if( cookie==NULL )
+  if( EMPTY( cookieText ) )
     {
-    Warning( "No session cookie" );
-    return NULL;
+    cookieText = GetSessionCookieFromEnvironment();
+    if( cookieText==NULL )
+      {
+      Warning( "No session cookie" );
+      return NULL;
+      }
     }
 
   char* remoteAddr = getenv( DEFAULT_REMOTE_ADDR );
@@ -322,7 +306,14 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
   char* userAgentHash = SimpleHash( userAgent, USER_AGENT_HASH_LEN );
 
   char* userID = NULL;
-  int err = GetIdentityFromCookie( cookie, &userID, remoteAddr, userAgentHash, key );
+  long expiry = -1;
+  long duration = -1;
+  int err = GetIdentityFromCookie( cookieText, &userID,
+                                   &expiry, &duration,
+                                   remoteAddr, userAgentHash,
+                                   key );
+
+  /* QQQ possibly write updated expiry back to cookie */
   if( err )
     {
     Warning( "GetIdentityFromCookie failed - %d", err );
@@ -330,5 +321,67 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key )
     }
 
   return userID;
+  }
+
+char* ExtractUserIDOrDieEx( enum callMethod cm,
+                            char* userVarName, char* cookieVarName,
+                            char* myUrlVarName,
+                            char* authURL,
+                            uint8_t* key )
+  {
+  char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
+  char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
+  char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
+
+  if( EMPTY( userVar ) && EMPTY( cookieVar ) )
+    {
+    if( cm==cm_ui )
+      {
+      printf("Content-Type: text/html\r\n\r\n");
+      printf( "<html><body><b>Configuration problem: what env variable carries the user ID and/or authentication cookie?</b></body></html>\n" );
+      exit(0);
+      }
+    else
+      APIError( "API basics", -1, "Configuration problem: what env variable carries the user ID and/or authentication cookie?" );
+    }
+
+  char* userName = NULL;
+
+  char* cookieValue = GetCookieFromEnvironment( cookieVar );
+  if( NOTEMPTY( cookieValue ) )
+    userName = GetValidatedUserIDFromHttpHeaders( key, cookieValue );
+
+  if( NOTEMPTY( userName ) )
+    return userName;
+
+  if( NOTEMPTY( cookieVar ) )
+    { /* there is a cookie but we don't know who the user is. */
+    char* myURL = MyRelativeRequestURL( myUrlVarName );
+    char* encURL = URLEncode( myURL );
+    char gotoURL[BUFLEN];
+    snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );
+    free( myURL );
+    free( encURL );
+    RedirectToUrl( gotoURL );
+    exit(0);
+    }
+
+  userName = getenv( userVar );
+
+  if( EMPTY( userName ) )
+    {
+    if( cm==cm_ui )
+      {
+      printf("Content-Type: text/html\r\n\r\n");
+      printf( "<html><body><b>Cannot discern user name from variable %s</b></body></html>\n", userVar );
+      exit(0);
+      }
+    else
+      {
+      APIError( "API basics", -2, "Cannot discern user name from HTTP variable (%s)", userVar );
+      }
+    }
+
+  return userName;
   }
 

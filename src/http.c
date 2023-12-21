@@ -981,68 +981,6 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
   return userName;
   }
 
-char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* userVarName, char* cookieVarName,
-                            char* myUrlVarName,
-                            char* authURL,
-                            uint8_t* key )
-  {
-  char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
-  char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
-  char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
-
-  if( EMPTY( userVar ) && EMPTY( cookieVar ) )
-    {
-    if( cm==cm_ui )
-      {
-      printf("Content-Type: text/html\r\n\r\n");
-      printf( "<html><body><b>Configuration problem: what env variable carries the user ID and/or authentication cookie?</b></body></html>\n" );
-      exit(0);
-      }
-    else
-      APIError( "API basics", -1, "Configuration problem: what env variable carries the user ID and/or authentication cookie?" );
-    }
-
-  char* userName = NULL;
-
-  char* cookieValue = GetCookieFromEnvironment( cookieVar );
-  if( NOTEMPTY( cookieValue ) )
-    userName = GetValidatedUserIDFromHttpHeaders( key );
-
-  if( NOTEMPTY( userName ) )
-    return userName;
-
-  if( NOTEMPTY( cookieVar ) )
-    { /* there is a cookie but we don't know who the user is. */
-    char* myURL = MyRelativeRequestURL( myUrlVarName );
-    char* encURL = URLEncode( myURL );
-    char gotoURL[BUFLEN];
-    snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );
-    free( myURL );
-    free( encURL );
-    RedirectToUrl( gotoURL );
-    exit(0);
-    }
-
-  userName = getenv( userVar );
-
-  if( EMPTY( userName ) )
-    {
-    if( cm==cm_ui )
-      {
-      printf("Content-Type: text/html\r\n\r\n");
-      printf( "<html><body><b>Cannot discern user name from variable %s</b></body></html>\n", userVar );
-      exit(0);
-      }
-    else
-      {
-      APIError( "API basics", -2, "Cannot discern user name from HTTP variable (%s)", userVar );
-      }
-    }
-
-  return userName;
-  }
-
 int StringMatchesUserIDFormat( char* userID )
   {
   if( EMPTY( userID ) )
@@ -1361,6 +1299,52 @@ int ParsePostData( FILE* stream,
 #endif
 
   return 0;
+  }
+
+char* GetCookieFromEnvironment( char* cookie )
+  {
+  if( EMPTY( cookie ) )
+    {
+    Warning( "Cannot GetCookieFromEnvironment() without specifying a cookie" );
+    return NULL;
+    }
+
+  int l = strlen( HTTP_COOKIE_PREFIX );
+  char* cookies = NULL;
+  for( int i=0; environ[i]!=NULL; ++i )
+    {
+    char* env = environ[i];
+    if( *env!=0 && strncmp( env, HTTP_COOKIE_PREFIX, l )==0 && env[l]=='=' )
+      {
+      cookies = env + l + 1;
+      break;
+      }
+    }
+
+  if( cookies==NULL )
+    {
+    /* no HTTP cookies were provided by the web server */
+    return NULL;
+    }
+
+  char* ptr = NULL;
+  l = strlen( cookie );
+  char* myCookies = strdup( cookies );
+  for( char* token = strtok_r( myCookies, ";", &ptr ); token!=NULL; token = strtok_r( NULL, ";", &ptr ) )
+    {
+    while( (*token)==' ' )
+      ++token;
+
+    if( strncasecmp( token, cookie, l )==0 && *(token+l)=='=' )
+      {
+      char* thisCookie = strdup(token + l + 1); 
+      free( myCookies );
+      return thisCookie;
+      }
+    }
+  free( myCookies );
+
+  return NULL;
   }
 
 extern char* sha1hexdigits;
