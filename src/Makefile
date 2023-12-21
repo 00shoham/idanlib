@@ -29,8 +29,8 @@ utils.a: $(OBJ)
 LUADIR := $(shell ./lua-dir.sh)
 INCLUDES=$(LUADIR)
 
-CFLAGS=-Wall -O2 $(INCLUDES)
-# CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
+# CFLAGS=-Wall -O2 $(INCLUDES)
+CFLAGS=-Wall -fsanitize=address -rdynamic -g $(INCLUDES)
 CC=gcc $(CFLAGS)
 
 %.o: %.c $(wildcard *.h)

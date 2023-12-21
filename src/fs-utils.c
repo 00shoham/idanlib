@@ -567,8 +567,6 @@ void FileCopyHandles( FILE* s, FILE* d )
       }
     } while( n>0 );
 
-  fclose( d );
-  fclose( s );
   }
 
 int FileCopy( const char* src, const char* dst )
