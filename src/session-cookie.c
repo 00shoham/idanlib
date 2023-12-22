@@ -140,7 +140,6 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( strcmp( pAddr, remoteAddr )!=0 )
         {
         Warning( "User has moved - IP changed (from %s to %s)", remoteAddr, pAddr );
-        free( plaintext );
         /* just a warning -- return -4; */
         }
       gotAddr = 1;
