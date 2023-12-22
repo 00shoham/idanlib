@@ -1,16 +1,18 @@
 #ifndef _INCLUDE_COOKIE
 #define _INCLUDE_COOKIE
 
-#define MIN_SESSION_TTL     60  /* 1 minute */
-#define COOKIE_ID           "IL-SESSION-STATE"
-#define HTTP_COOKIE_PREFIX  "HTTP_COOKIE"
+#define MIN_SESSION_TTL             60  /* 1 minute */
+#define DEFAULT_ID_OF_AUTH_COOKIE   "IL-SESSION-STATE"
+#define HTTP_COOKIE_PREFIX          "HTTP_COOKIE"
 
 extern char **environ;
 
 char* SimpleHash( char* string, int nBytes );
-void ClearCookie( char* cookie );
-void ClearSessionCookie();
-char* GetSessionCookieFromEnvironment();
+
+void ClearSessionCookieSpecific( char* cookieId );
+char* GetSessionCookieFromEnvironmentSpecific( char* cookieId );
+void ClearSessionCookieDefault();
+char* GetSessionCookieFromEnvironmentDefault();
 
 char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, long ttlSeconds, uint8_t* key );
 int GetIdentityFromCookie( char* cookie, char** userPtr,

@@ -1301,6 +1301,11 @@ int ParsePostData( FILE* stream,
   return 0;
   }
 
+void ClearCookie( char* cookie )
+  { 
+  printf( "Set-Cookie: %s=; Max-Age=-1\n", cookie );
+  }
+
 char* GetCookieFromEnvironment( char* cookie )
   {
   if( EMPTY( cookie ) )

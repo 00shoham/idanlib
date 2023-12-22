@@ -57,6 +57,7 @@ int GetArgumentFromQueryString( char** bufPtr, char* keyword, char* regExp );
 char* GetWebUser();
 char* GetWebGroup();
 
+void ClearCookie( char* cookie );
 char* GetCookieFromEnvironment( char* cookie );
 
 char* RemoveURLEncoding( char* src, char* dst );

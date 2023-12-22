@@ -2,19 +2,30 @@
 
 #define USER_AGENT_HASH_LEN 4
 
-void ClearCookie( char* cookie )
-  { 
-  printf( "Set-Cookie: %s=; Max-Age=-1\n", cookie );
-  }
-
-void ClearSessionCookie()
-  { 
-  ClearCookie( COOKIE_ID  );
-  }
-
-char* GetSessionCookieFromEnvironment()
+void ClearSessionCookieSpecific( char* cookieId )
   {
-  return GetCookieFromEnvironment( COOKIE_ID );
+  if( EMPTY( cookieId ) )
+    return;
+
+  ClearCookie( cookieId  );
+  }
+
+char* GetSessionCookieFromEnvironmentSpecific( char* cookieId )
+  {
+  if( EMPTY( cookieId ) )
+    return NULL;
+
+  return GetCookieFromEnvironment( cookieId );
+  }
+
+void ClearSessionCookieDefault()
+  {
+  ClearCookie( DEFAULT_ID_OF_AUTH_COOKIE  );
+  }
+
+char* GetSessionCookieFromEnvironmentDefault()
+  {
+  return GetCookieFromEnvironment( DEFAULT_ID_OF_AUTH_COOKIE );
   }
 
 char* EncodeIdentityInCookie( char* userID, char* remoteAddr, char* userAgent, long ttlSeconds, uint8_t* key )
@@ -262,16 +273,17 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
   return -19;
   }
 
+/* QQQ specify which cookie to drop this into */
 int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key )
-  { 
+  {
   if( EMPTY( userID ) )
-    { 
+    {
     Warning( "PrintSessionCookie() - must specify user ID" );
     return -1;
     }
 
   if( ttlSeconds < MIN_SESSION_TTL )
-    { 
+    {
     Warning( "PrintSessionCookie() - must specify user TTL of at least %d", MIN_SESSION_TTL );
     return -2;
     }
@@ -295,7 +307,7 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
-  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", COOKIE_ID, cookie, ttlSeconds);
+  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", DEFAULT_ID_OF_AUTH_COOKIE, cookie, ttlSeconds);
   free( cookie );
 
   if( userAgentHash )
@@ -304,11 +316,12 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   return 0;
   }
 
+/* QQQ pass in cookie ID to get a particular session */
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
   {
   if( EMPTY( cookieText ) )
     {
-    cookieText = GetSessionCookieFromEnvironment();
+    cookieText = GetSessionCookieFromEnvironmentDefault();
     if( cookieText==NULL )
       {
       Warning( "No session cookie" );
@@ -370,6 +383,7 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
   return userID;
   }
 
+/* QQQ pass in a cookie ID to get a specific URL's session - or else figure it out from url var->config->cookie ID in that config */
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* userVarName, char* cookieVarName,
                             char* myUrlVarName,
@@ -377,7 +391,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
                             uint8_t* key )
   {
   char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
-  char* cookieVar = EMPTY(cookieVarName) ? COOKIE_ID : cookieVarName;
+  char* cookieVar = EMPTY(cookieVarName) ? DEFAULT_ID_OF_AUTH_COOKIE : cookieVarName;
   char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
 
   if( EMPTY( userVar ) && EMPTY( cookieVar ) )
