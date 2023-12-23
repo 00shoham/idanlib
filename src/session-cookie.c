@@ -326,7 +326,11 @@ int PrintSessionCookie( char* cookieVarName,
   }
 
 /* pass in remote_addr and user_agent vars */
-char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* cookieText )
+char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
+                                         char* cookieName,
+                                         char* cookieText,
+                                         char* remoteAddrVar,
+                                         char* userAgentVar )
   {
   if( EMPTY( cookieName ) )
     {
@@ -353,7 +357,7 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* c
   else
     Notice( "GetValidatedUserIDFromHttpHeaders() - remoteAddr == [%s]", NULLPROTECT( remoteAddr ) );
 
-  char* userAgent = getenv( DEFAULT_USER_AGENT_VAR );
+  char* userAgent = getenv( userAgentVar==NULL ? DEFAULT_USER_AGENT_VAR : userAgentVar );
   if( userAgent==NULL )
     {
     Warning( "No user agent" );
@@ -392,8 +396,8 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* c
       err = PrintSessionCookie( cookieName,
                                 userID,
                                 duration,
-                                DEFAULT_REMOTE_ADDR,
-                                DEFAULT_USER_AGENT_VAR,
+                                remoteAddrVar,
+                                userAgentVar,
                                 key );
       }
     }
@@ -404,9 +408,10 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* c
   return userID;
   }
 
-/* QQQ pass in remote-addr and user-agent varnames */
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* userVarName,
+                            char* remoteAddrVarName,
+                            char* userAgentVarName,
                             char* cookieVarName,
                             char* myUrlVarName,
                             char* authURL,
@@ -414,6 +419,8 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* cssPath )
   {
   char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
+  char* remoteAddrVar = EMPTY(remoteAddrVarName) ? DEFAULT_REMOTE_ADDR : remoteAddrVarName;
+  char* userAgentVar = EMPTY(userAgentVarName) ? DEFAULT_USER_AGENT_VAR : userAgentVarName;
   char* cookieVar = EMPTY(cookieVarName) ? DEFAULT_ID_OF_AUTH_COOKIE : cookieVarName;
   char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
 
@@ -433,7 +440,8 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
 
   char* cookieValue = GetCookieFromEnvironment( cookieVar );
   if( NOTEMPTY( cookieValue ) )
-    userName = GetValidatedUserIDFromHttpHeaders( key, cookieVar, cookieValue );
+    userName = GetValidatedUserIDFromHttpHeaders( key, cookieVar, cookieValue,
+                                                  remoteAddrVar, userAgentVar );
 
   if( cookieValue!=NULL )
     free( cookieValue );

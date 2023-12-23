@@ -28,10 +28,15 @@ int PrintSessionCookie( char* cookieVarName,
 void ClearSessionCookie();
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
                                          char* cookieName,
-                                         char* cookieText );
+                                         char* cookieText,
+                                         char* remoteAddrVar,
+                                         char* userAgentVar );
 
 char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* userVarName, char* cookieVarName,
+                            char* userVarName,
+                            char* remoteAddrVarName,
+                            char* userAgentVarName,
+                            char* cookieVarName,
                             char* myUrlVarName,
                             char* authURL,
                             uint8_t* key,
