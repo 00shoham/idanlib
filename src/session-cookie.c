@@ -378,7 +378,7 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* c
     }
 
   if( expiry>0 && duration>0 )
-    { /* QQQ possibly write updated expiry back to cookie */
+    {
     time_t tNow = time(NULL);
     time_t tExpiry = tNow + duration;
     if( tExpiry - expiry >= RENEW_SESSION_INTERVAL )
@@ -404,9 +404,10 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* c
   return userID;
   }
 
-/* QQQ pass in a cookie ID to get a specific URL's session - or else figure it out from url var->config->cookie ID in that config */
+/* QQQ pass in remote-addr and user-agent varnames */
 char* ExtractUserIDOrDieEx( enum callMethod cm,
-                            char* userVarName, char* cookieVarName,
+                            char* userVarName,
+                            char* cookieVarName,
                             char* myUrlVarName,
                             char* authURL,
                             uint8_t* key,
