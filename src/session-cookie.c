@@ -325,12 +325,18 @@ int PrintSessionCookie( char* cookieVarName,
   return 0;
   }
 
-/* QQQ pass in cookie ID to get a particular session */
-char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
+/* pass in remote_addr and user_agent vars */
+char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieName, char* cookieText )
   {
+  if( EMPTY( cookieName ) )
+    {
+    Warning( "GetValidatedUserIDFromHttpHeaders() - must specify cookie name" );
+    return NULL;
+    }
+
   if( EMPTY( cookieText ) )
     {
-    cookieText = GetSessionCookieFromEnvironmentDefault();
+    cookieText = GetSessionCookieFromEnvironmentSpecific( cookieName );
     if( cookieText==NULL )
       {
       Warning( "No session cookie" );
@@ -365,7 +371,7 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
 
   if( err )
     {
-    Warning( "GetIdentityFromCookie failed - %d", err );
+    Warning( "GetIdentityFromCookie from [%s] failed - %d", cookieName, err );
     if( userAgentHash )
       free( userAgentHash );
     return NULL;
@@ -375,14 +381,20 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText )
     { /* QQQ possibly write updated expiry back to cookie */
     time_t tNow = time(NULL);
     time_t tExpiry = tNow + duration;
-    if( tExpiry > expiry )
+    if( tExpiry - expiry >= RENEW_SESSION_INTERVAL )
       {
       Notice( "Extending session of %s on Hash(%s) at %s by %d seconds",
           NULLPROTECT( userID ),
           NULLPROTECT( userAgentHash ),
           NULLPROTECT( remoteAddr ),
           (int)(tExpiry - expiry) );
-      err = PrintSessionCookie( userID, duration, DEFAULT_REMOTE_ADDR, DEFAULT_USER_AGENT_VAR, key );
+
+      err = PrintSessionCookie( cookieName,
+                                userID,
+                                duration,
+                                DEFAULT_REMOTE_ADDR,
+                                DEFAULT_USER_AGENT_VAR,
+                                key );
       }
     }
 
@@ -420,7 +432,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
 
   char* cookieValue = GetCookieFromEnvironment( cookieVar );
   if( NOTEMPTY( cookieValue ) )
-    userName = GetValidatedUserIDFromHttpHeaders( key, cookieValue );
+    userName = GetValidatedUserIDFromHttpHeaders( key, cookieVar, cookieValue );
 
   if( cookieValue!=NULL )
     free( cookieValue );

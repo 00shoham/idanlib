@@ -1520,7 +1520,7 @@ void RedirectToUrl( char* url, char* cssPath )
   printf( "<html>\n" );
   printf( "  <head>\n" );
   printf( "    <title>Redirect</title>\n" );
-  if( EMPTH( cssPath ) )
+  if( EMPTY( cssPath ) )
     printf( "    <link rel=\"stylesheet\" href=\"/auth2cookie/ui.css\"/>\n" );
   else
     printf( "    <link rel=\"stylesheet\" href=\"%s\"/>\n", cssPath );

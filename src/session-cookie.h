@@ -26,7 +26,9 @@ int PrintSessionCookie( char* cookieVarName,
                         char* userAgentVariable,
                         uint8_t* key );
 void ClearSessionCookie();
-char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText );
+char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
+                                         char* cookieName,
+                                         char* cookieText );
 
 char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* userVarName, char* cookieVarName,

@@ -76,4 +76,6 @@ extern pthread_mutex_t luaLock;
 #define DEFAULT_REMOTE_ADDR     "REMOTE_ADDR"
 #define DEFAULT_USER_AGENT_VAR  "HTTP_USER_AGENT"
 
+#define RENEW_SESSION_INTERVAL 30 /* seconds */
+
 #endif
