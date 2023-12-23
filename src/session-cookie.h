@@ -19,7 +19,12 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
                            long* expiryPtr, long* durationPtr,
                            char* remoteAddr, char* userAgent,
                            uint8_t* key );
-int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key );
+int PrintSessionCookie( char* cookieVarName,
+                        char* userID,
+                        long ttlSeconds,
+                        char* remoteAddrVariable,
+                        char* userAgentVariable,
+                        uint8_t* key );
 void ClearSessionCookie();
 char* GetValidatedUserIDFromHttpHeaders( uint8_t* key, char* cookieText );
 

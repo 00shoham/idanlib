@@ -272,19 +272,29 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
   return -19;
   }
 
-/* QQQ specify which cookie to drop this into */
-int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable, char* userAgentVariable, uint8_t* key )
+int PrintSessionCookie( char* cookieVarName,
+                        char* userID,
+                        long ttlSeconds,
+                        char* remoteAddrVariable,
+                        char* userAgentVariable,
+                        uint8_t* key )
   {
+  if( EMPTY( cookieVarName ) )
+    {
+    Warning( "PrintSessionCookie() - must specify cookie variable name" );
+    return -1;
+    }
+
   if( EMPTY( userID ) )
     {
     Warning( "PrintSessionCookie() - must specify user ID" );
-    return -1;
+    return -2;
     }
 
   if( ttlSeconds < MIN_SESSION_TTL )
     {
     Warning( "PrintSessionCookie() - must specify user TTL of at least %d", MIN_SESSION_TTL );
-    return -2;
+    return -3;
     }
 
   char* varName = EMPTY( remoteAddrVariable ) ? DEFAULT_REMOTE_ADDR : remoteAddrVariable;
@@ -292,7 +302,7 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   if( EMPTY( addr ) )
     {
     Warning( "PrintSessionCookie() - cannot discern remote address from HTTP header %s", varName );
-    return -3;
+    return -4;
     }
 
   varName = EMPTY( userAgentVariable ) ? DEFAULT_USER_AGENT_VAR : userAgentVariable;
@@ -300,13 +310,13 @@ int PrintSessionCookie( char* userID, long ttlSeconds, char* remoteAddrVariable,
   if( EMPTY( uagt ) )
     {
     Warning( "PrintSessionCookie() - cannot discern user agent from HTTP header %s", varName );
-    return -4;
+    return -5;
     }
   char* userAgentHash = SimpleHash( uagt, USER_AGENT_HASH_LEN );
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
-  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", DEFAULT_ID_OF_AUTH_COOKIE, cookie, ttlSeconds);
+  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", cookieVarName, cookie, ttlSeconds);
   free( cookie );
 
   if( userAgentHash )
