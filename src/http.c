@@ -1481,8 +1481,7 @@ char* FullRequestURL( char* hostVarName, char* reqVarName )
   return strdup( url );
   }
 
-/* QQQ pass in a path for where to find the CSS */
-void RedirectToUrl( char* url )
+void RedirectToUrl( char* url, char* cssPath )
   {
   if( EMPTY( url ) )
     Error( "Cannot redirect to NULL URL" );
@@ -1521,7 +1520,10 @@ void RedirectToUrl( char* url )
   printf( "<html>\n" );
   printf( "  <head>\n" );
   printf( "    <title>Redirect</title>\n" );
-  printf( "    <link rel=\"stylesheet\" href=\"/auth2cookie/ui.css\"/>\n" );
+  if( EMPTH( cssPath ) )
+    printf( "    <link rel=\"stylesheet\" href=\"/auth2cookie/ui.css\"/>\n" );
+  else
+    printf( "    <link rel=\"stylesheet\" href=\"%s\"/>\n", cssPath );
   printf( "  </head>\n" );
   printf( "  <body>\n" );
   printf( "    <h1>Redirect</h1>\n" );

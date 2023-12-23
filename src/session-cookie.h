@@ -27,6 +27,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* userVarName, char* cookieVarName,
                             char* myUrlVarName,
                             char* authURL,
-                            uint8_t* key );
+                            uint8_t* key,
+                            char* cssPath );
 #endif
 

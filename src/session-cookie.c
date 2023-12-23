@@ -387,7 +387,8 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
                             char* userVarName, char* cookieVarName,
                             char* myUrlVarName,
                             char* authURL,
-                            uint8_t* key )
+                            uint8_t* key,
+                            char* cssPath )
   {
   char* userVar = EMPTY(userVarName) ? DEFAULT_USER_ENV_VAR : userVarName;
   char* cookieVar = EMPTY(cookieVarName) ? DEFAULT_ID_OF_AUTH_COOKIE : cookieVarName;
@@ -425,7 +426,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
     snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );
     free( myURL );
     free( encURL );
-    RedirectToUrl( gotoURL );
+    RedirectToUrl( gotoURL, cssPath );
     exit(0);
     }
 

@@ -6,6 +6,7 @@
 #define DEFAULT_USER_ENV_VAR         "REMOTE_USER"
 #define DEFAULT_REQUEST_URI_ENV_VAR  "REQUEST_URI"
 #define DEFAULT_HTTP_HOST_ENV_VAR    "HTTP_HOST"
+#define DEFAULT_HTTP_REFERER         "HTTP_REFERER"
 #define DEFAULT_AUTH_URL             "/cgi-bin/auth2cookie"
 
 
@@ -91,6 +92,6 @@ int IsURLEncoded( char* string ); /* 0==true */
 
 char* MyRelativeRequestURL( char* reqVarName );
 char* FullRequestURL( char* hostVarName, char* reqVarName );
-void RedirectToUrl( char* url );
+void RedirectToUrl( char* url, char* cssPath );
 
 #endif
