@@ -312,11 +312,26 @@ int PrintSessionCookie( char* cookieVarName,
     Warning( "PrintSessionCookie() - cannot discern user agent from HTTP header %s", varName );
     return -5;
     }
+
+
   char* userAgentHash = SimpleHash( uagt, USER_AGENT_HASH_LEN );
+
+  /* DEBUG
+  Notice( "PrintSessionCookie(): user=%s, addr=%s, uah=%s, ttl=%d, key=%s",
+          NULLPROTECT( userID ),
+          NULLPROTECT( addr ),
+          NULLPROTECT( userAgentHash ),
+          ttlSeconds,
+          key==NULL || *key==0 ? "nil" : "value" );
+  */
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
   printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", cookieVarName, cookie, ttlSeconds);
+
+  /* DEBUG
+  Notice( "Set-Cookie: %s=%s; Max-Age=%ld\n", cookieVarName, cookie, ttlSeconds);
+  */
   free( cookie );
 
   if( userAgentHash )
@@ -424,6 +439,15 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
   char* cookieVar = EMPTY(cookieVarName) ? DEFAULT_ID_OF_AUTH_COOKIE : cookieVarName;
   char* authLocation = EMPTY( authURL ) ? DEFAULT_AUTH_URL : authURL;
 
+  /* DEBUG
+  Notice( "ExtractUserIDOrDieEx()" );
+  Notice( "ExtractUserIDOrDieEx() - userVar = %s", userVar );
+  Notice( "ExtractUserIDOrDieEx() - remoteAddrVar = %s", remoteAddrVar );
+  Notice( "ExtractUserIDOrDieEx() - userAgentVar = %s", userAgentVar );
+  Notice( "ExtractUserIDOrDieEx() - cookieVar = %s", cookieVar );
+  Notice( "ExtractUserIDOrDieEx() - authLocation = %s", authLocation );
+  */
+
   if( EMPTY( userVar ) && EMPTY( cookieVar ) )
     {
     if( cm==cm_ui )
@@ -440,8 +464,15 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
 
   char* cookieValue = GetCookieFromEnvironment( cookieVar );
   if( NOTEMPTY( cookieValue ) )
+    {
+    /* DEBUG Notice( "ExtractUserIDOrDieEx() - got cookie [%s] from [%s]", cookieValue, cookieVar ); */
     userName = GetValidatedUserIDFromHttpHeaders( key, cookieVar, cookieValue,
                                                   remoteAddrVar, userAgentVar );
+    }
+  else
+    {
+    Notice( "ExtractUserIDOrDieEx() - cookie is empty" );
+    }
 
   if( cookieValue!=NULL )
     free( cookieValue );
@@ -452,11 +483,13 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
   if( NOTEMPTY( cookieVar ) )
     { /* there is a cookie but we don't know who the user is. */
     char* myURL = MyRelativeRequestURL( myUrlVarName );
+    Notice( "MyRelativeRequestURL() says we are at %s", NULLPROTECT( myURL ) );
     char* encURL = URLEncode( myURL );
     char gotoURL[BUFLEN];
     snprintf( gotoURL, sizeof(gotoURL)-1, "%s?URL=%s", authLocation, encURL );
     free( myURL );
     free( encURL );
+    Notice( "Redirecting to %s", NULLPROTECT( gotoURL ) );
     RedirectToUrl( gotoURL, cssPath );
     exit(0);
     }
