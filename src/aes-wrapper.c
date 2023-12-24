@@ -147,6 +147,19 @@ int Base64DecodeDecryptAES256( char* base64cipher,
                                uint8_t** outputBuffer,
                                size_t* outputSize )
   {
+  if( EMPTY( base64cipher ) )
+    return -99;
+  if( outputBuffer==NULL )
+    return -98;
+  if( outputSize==NULL )
+    return -97;
+  if( key==NULL )
+    return -96;
+  if( keyLen != AES_KEYLEN )
+    Warning( "Base64DecodeDecryptAES256() - keylen = %d, not %d", keyLen, AES_KEYLEN );
+
+  /* Notice( "Base64DecodeDecryptAES256( %s ) (%d chars)", base64cipher, base64Len ); */
+
   int rawLen = 0;
   uint8_t* rawEncrypted = DecodeFromBase64( base64cipher, base64Len, &rawLen );
   if( rawLen == 0 )
@@ -154,10 +167,14 @@ int Base64DecodeDecryptAES256( char* base64cipher,
   if( rawLen < 0 )
     return rawLen;
 
+  /* Notice( "Base64DecodeDecryptAES256() - decoded to %d chars", rawLen ); */
+
   size_t   plainlen = 0;
   uint8_t* plaintext = NULL;
   int err = DecryptAES256( rawEncrypted, rawLen, key, keyLen,
                            &plaintext, &plainlen );
+
+  /* Notice( "Base64DecodeDecryptAES256() - decryption returns %d", err ); */
 
   free( rawEncrypted );
 
