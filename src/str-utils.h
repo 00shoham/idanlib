@@ -22,6 +22,7 @@ int StringIsAnIdentifier( char* str );
 void LowerCase( char* dst, int dstSize, char* src );
 void UpperCase( char* dst, int dstSize, char* src );
 int StringMatchesRegex( char* expr, char* str );
+int CompareStringToPattern( char* pattern, char* example, int caseSensitive );
 char* ExtractRegexFromString( char* expr, char* str );
 void FreeArrayOfStrings( char** array, int len );
 char* GenerateAllocateGUID();

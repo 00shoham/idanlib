@@ -1535,3 +1535,108 @@ void RedirectToUrl( char* url, char* cssPath )
   if( decoded )
     free( passUrl );
   }
+
+/* http://shoham.ca */
+int SplitUrlIntoParts( char* url, char** protocol, char** host, char** path )
+  {
+  if( EMPTY( url ) || protocol==NULL || host==NULL || path==NULL )
+    {
+    Warning( "SplitUrl() - bad args" );
+    return -1;
+    }
+
+  char* copy = strdup( url );
+  char* ptr = copy;
+
+  char* separator = strstr( ptr, "://" );
+  if( separator==NULL )
+    { /* we assume that things like shoham.ca/somefile.html which might be interpreted as
+         hostname/path in a strict sense are the file somefile.html in folder shoham.ca */
+    *protocol = 0;
+    *host = 0;
+    *path = strdup( ptr );
+    }
+  else
+    {
+    *separator = 0;
+    *protocol = strdup( ptr );
+    *separator = ':';
+    ptr = separator + 3;
+
+    char* slash = strchr( ptr, '/' );
+    if( slash==NULL || slash==ptr )
+      {
+      *host = strdup( ptr );
+      *path = 0;
+      }
+    else
+      {
+      *slash = 0;
+      *host = strdup( ptr );
+      *slash = '/';
+      *path = strdup( slash );
+      }
+    }
+
+  free( copy );
+  return 0;
+  }
+
+int CompareTwoUrls( char* pattern, char* example )
+  {
+  if( ( EMPTY( pattern ) || strcmp( pattern, "/" )==0) 
+      && ( EMPTY( example ) || strcmp( example, "/")==0 ) )
+    return 0;  /* two nothings match */
+
+  if( EMPTY( pattern ) || EMPTY( example ) )
+    return -1; /* nothing does not match something */
+
+  char* protocolA = NULL;
+  char* hostA = NULL;
+  char* pathA = NULL;
+
+  char* protocolB = NULL;
+  char* hostB = NULL;
+  char* pathB = NULL;
+
+  int errA = SplitUrlIntoParts( pattern, &protocolA, &hostA, &pathA );
+  if( errA )
+    return -100 + errA;
+
+  int errB = SplitUrlIntoParts( example, &protocolB, &hostB, &pathB );
+  if( errB )
+    return -200 + errB;
+
+  /*
+  printf( "Pattern %s --> %s :: %s :: %s\n", NULLPROTECT( pattern ), NULLPROTECT( protocolA ), NULLPROTECT( hostA ), NULLPROTECT( pathA ) );
+  printf( "Example %s --> %s :: %s :: %s\n", NULLPROTECT( example ), NULLPROTECT( protocolB ), NULLPROTECT( hostB ), NULLPROTECT( pathB ) );
+  */
+
+  if( NOTEMPTY( protocolA ) && NOTEMPTY( protocolB ) )
+    { /* if one is empty and the other isn't - probably fine */
+    int compareProtocol = CompareStringToPattern( protocolA, protocolB, 0 );
+    if( compareProtocol )
+      return compareProtocol;
+    }
+
+  if( NOTEMPTY( hostA ) )
+    {
+    int compareHost = CompareStringToPattern( hostA, hostB, 0 );
+    if( compareHost )
+      return compareHost;
+    } /* if hostA is empty, we don't care if hostB isn't */
+
+  if( NOTEMPTY( pathA ) )
+    {
+    if( strcmp( pathA, "/" )==0 && EMPTY( pathB ) ) /* special case */
+      return 0;
+    int comparePath = CompareStringToPattern( pathA, pathB, 0 );
+    if( comparePath )
+      {
+      return comparePath;
+      }
+    }
+
+  return 0;
+  }
+

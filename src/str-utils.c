@@ -415,6 +415,23 @@ int StringMatchesRegex( char* expr, char* str )
   return status;
   }
 
+/* Pattern may be a regex or not */
+int CompareStringToPattern( char* pattern, char* example, int caseSensitive )
+  {
+  if( EMPTY( pattern ) && EMPTY( example ) )
+    return 0; /* nothing matches nothing */
+  if( EMPTY( pattern ) || EMPTY( example ) )
+    return -1; /* exactly one is not-empty, so fail */
+  if( strchr( pattern, '*' )!=0 )
+    { /* there is regex here */
+    int x = StringMatchesRegex( pattern, example );
+    return x;
+    }
+  if( caseSensitive )
+    return strcmp( pattern, example );
+  return strcasecmp( pattern, example );
+  }
+
 char* ExtractRegexFromString( char* expr, char* str )
   {
   if( EMPTY( expr ) )

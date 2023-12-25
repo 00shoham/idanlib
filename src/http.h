@@ -94,4 +94,7 @@ char* MyRelativeRequestURL( char* reqVarName );
 char* FullRequestURL( char* hostVarName, char* reqVarName );
 void RedirectToUrl( char* url, char* cssPath );
 
+int SplitUrlIntoParts( char* url, char** protocol, char** host, char** path );
+int CompareTwoUrls( char* pattern, char* example );
+
 #endif
