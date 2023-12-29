@@ -393,6 +393,8 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
     Warning( "GetIdentityFromCookie from [%s] failed - %d", cookieName, err );
     if( userAgentHash )
       free( userAgentHash );
+    Warning( "Clearing cookie %s as it's likely corrupt", cookieName );
+    ClearCookie( cookieName );
     return NULL;
     }
 
