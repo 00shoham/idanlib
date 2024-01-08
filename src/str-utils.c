@@ -727,3 +727,94 @@ char* UnescapeUnicodeMarkup( char* raw )
 
   return clean;
   }
+
+int CountOccurrences( char* pattern, char* search )
+  {
+  if( EMPTY( pattern ) || EMPTY( search ) )
+    return 0;
+
+  int lSearch = strlen( search );
+
+  int n = 0;
+  for(;;)
+    {
+    char* find = strstr( pattern, search );
+    if( find==NULL )
+      break;
+
+    ++n;
+    pattern = find + lSearch;
+    }
+
+  return n;
+  }
+
+char* SearchAndReplace( char* pattern, char* search, char* replace )
+  {
+  if( EMPTY( pattern ) || EMPTY( search ) || replace==NULL )
+    return NULL;
+
+  int n = CountOccurrences( pattern, search );
+
+  int lPattern = strlen( pattern );
+  int lSearch = strlen( search );
+  int lReplace = strlen( replace );
+
+  int finalLen = lPattern + n * (lReplace - lSearch);
+  if( finalLen<0 )
+    {
+    Warning( "SearchAndReplace(%s,%s,%s) - finalLen is an implausible %d", pattern, search, replace, finalLen );
+    return NULL;
+    }
+
+  char* output = (char*)SafeCalloc( finalLen+10, sizeof( char ), "SearchAndReplace() output buffer" );
+  char* ptr = output;
+  char* endPtr = output + finalLen;
+  char* endPattern = pattern + lPattern;
+
+  for( char* match=strstr( pattern, search); match!=NULL; match=strstr( pattern, search) )
+    {
+    int chunkLen = match-pattern;
+    if( ptr + chunkLen > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (A)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, pattern, chunkLen );
+    ptr += (match-pattern);
+    *ptr = 0;
+
+    if( ptr+lReplace > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (B)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, replace, lReplace );
+    ptr += lReplace;
+    *ptr = 0;
+
+    pattern += chunkLen;
+    pattern += lSearch;
+    }
+
+  if( pattern<endPattern )
+    {
+    int chunkLen = endPattern-pattern;
+    if( ptr + chunkLen > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (C)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, pattern, chunkLen );
+    ptr += (endPattern-pattern);
+    *ptr = 0;
+    }
+
+  return output;
+  }
