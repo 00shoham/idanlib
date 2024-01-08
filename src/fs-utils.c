@@ -802,16 +802,24 @@ long GetFileAge( char* folder, char* fileName )
   return age;
   }
 
-void GrabEndOfFile( FILE* input, char* output, int outputLen )
+void GrabEndOfFile( FILE* input, char* output, int outputLen, int nLines )
   {
   char* endPtr = output + outputLen - 1;
   char* ptr = output;
   char buf[BUFLEN];
-  while( fgets( buf, sizeof(buf)-1, input )==buf )
+  int gotLines = 0;
+  while( gotLines<nLines && fgets( buf, sizeof(buf)-1, input )==buf && ptr+10<endPtr )
     {
+    ++gotLines;
     strncpy( ptr, buf, endPtr-ptr );
     ptr += strlen( buf );
-    *ptr = 0;
+    if( ptr<endPtr )
+      *ptr = 0;
+    else
+      {
+      *endPtr = 0;
+      break;
+      }
     }
   }
 
@@ -851,7 +859,7 @@ void TailFile( FILE* input, int nLines, char* output, int outputLen )
     fseek( input, pos, SEEK_SET );
     }
 
-  GrabEndOfFile( input, output, outputLen );
+  GrabEndOfFile( input, output, outputLen, nLines );
   }
 
 int LockFile( char* fileName )

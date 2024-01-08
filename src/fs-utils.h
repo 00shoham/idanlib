@@ -44,7 +44,7 @@ int GetOrderedDirectoryEntries2( const char* parentFolder,
                                  char*** entriesP,
                                  int sort );
 void EnsureDirExists( char* path );
-void GrabEndOfFile( FILE* input, char* output, int outputLen );
+void GrabEndOfFile( FILE* input, char* output, int outputLen, int nLines );
 void TailFile( FILE* input, int nLines, char* output, int outputLen );
 int LockFile( char* fileName );
 int UnLockFile( int fd );
