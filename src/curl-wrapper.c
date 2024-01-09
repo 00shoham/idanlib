@@ -299,7 +299,7 @@ CURLcode WebTransaction( char* url,
       else
         {
         char buf[BUFLEN];
-        snprintf( buf, sizeof(buf)-1, "%s=%s", tv->tag, tv->value );
+        snprintf( buf, sizeof(buf)-1, "%s: %s", tv->tag, tv->value );
         hs = curl_slist_append( hs, buf );
         ++nHeaders;
         }
