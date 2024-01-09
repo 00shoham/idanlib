@@ -199,7 +199,7 @@ static int CurlDebugTrace( CURL *handle, curl_infotype type,
 CURLcode WebTransaction( char* url,
                          enum httpMethod method,
                          char* postData,
-                         int postDataBinarySize, /* set if postData includes \000s */
+                         int postDataBinarySize, /* set *only* if postData includes \000s */
                          char* postContentType,
                          _DATA* postResult,
                          char* urlUsername,
