@@ -613,6 +613,45 @@ int LUARegExMatch( lua_State* L )
   return 1;
   }
 
+int LUAReadLineFromCommand( lua_State* L )
+  {
+  char* me = "LUAReadLineFromCommand";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* cmd = GetTagValue( tv, "command" );
+  if( EMPTY( cmd ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: timeout not set", me );
+    return 0;
+    }
+
+  int timeout = GetTagValueInt( tv, "timeout" );
+  if( timeout<1 )
+    timeout = (int)GetTagValueDouble( tv, "timeout" );
+  if( timeout<5 )
+    {
+    timeout = 5;
+    Notice( "%s: timeout not set - setting to 5 seconds", me );
+    }
+
+  char buf[BUFLEN];
+  buf[0] = 0;
+  int result = ReadLineFromCommand( cmd, buf, sizeof(buf)-1, 1, timeout );
+  FreeTagValue( tv );
+
+  lua_pushstring( L, buf );
+  lua_pushnumber( L, result );
+
+  return 2;
+  }
+
 int LUANotice( lua_State* L )
   {
   if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
@@ -721,6 +760,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUARegExMatch );
   lua_setglobal( L, "RegExMatch" );
+
+  lua_pushcfunction( L, LUAReadLineFromCommand );
+  lua_setglobal( L, "ReadLineFromCommand" );
 
   // load the libs
   luaL_openlibs(L);
