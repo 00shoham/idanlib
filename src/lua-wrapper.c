@@ -619,7 +619,9 @@ int LUAReadLineFromCommand( lua_State* L )
   if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
     {
     Warning( "%s: Top of LUA stack is not a table", me );
-    return 0;
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -1 );
+    return 2;
     }
 
   _TAG_VALUE* tv = LuaTableToTagValue( L );
@@ -629,7 +631,9 @@ int LUAReadLineFromCommand( lua_State* L )
     {
     FreeTagValue( tv );
     Warning( "%s: timeout not set", me );
-    return 0;
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -2 );
+    return 2;
     }
 
   int timeout = GetTagValueInt( tv, "timeout" );
