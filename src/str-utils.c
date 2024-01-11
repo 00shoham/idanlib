@@ -818,3 +818,38 @@ char* SearchAndReplace( char* pattern, char* search, char* replace )
 
   return output;
   }
+
+char* TrimCharsFromTail( char* string, char* tailchars )
+  {
+  if( EMPTY( string ) )
+    return string;
+
+  if( EMPTY( tailchars ) )
+    return string;
+
+  int l = strlen( string );
+  char* endp = string + l - 1;
+
+  int n = strlen( tailchars );
+
+  for( char* ptr=endp; ptr>=string; --ptr )
+    {
+    int found = 0;
+    int c = *ptr;
+    for( int i=0; i<n; ++i )
+      {
+      int q = tailchars[i];
+      if( q==c )
+        {
+        *ptr = 0;
+        found = 1;
+        break;
+        }
+      }
+    if( ! found )
+      break;
+    }
+
+  return string;
+  }
+

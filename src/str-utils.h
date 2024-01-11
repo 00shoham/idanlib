@@ -38,5 +38,6 @@ int IsUnicodeMarkup( char* raw );
 char* UnescapeUnicodeMarkup( char* raw );
 int CountOccurrences( char* pattern, char* search );
 char* SearchAndReplace( char* pattern, char* search, char* replace );
+char* TrimCharsFromTail( char* string, char* tailchars );
 
 #endif
