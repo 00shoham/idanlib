@@ -423,20 +423,23 @@ int LUAWebTransaction( lua_State* L )
     FreeTagValue( tv );
     return 0;
     }
-  else
-    {
+
 #ifdef DEBUG
-    Notice( "LUA WebTransaction().  URL=%s POST_DATA=[%s] retVal=200/OK retData=[%s]",
-            NULLPROTECT( url ),
-            NULLPROTECT( postData ),
-            NULLPROTECT( (char*)d.data ) );
+  Notice( "LUA WebTransaction().  URL=%s POST_DATA=[%s] retVal=200/OK retData=[%s]",
+          NULLPROTECT( url ),
+          NULLPROTECT( postData ),
+          NULLPROTECT( (char*)d.data ) );
 #endif
-    const char* internalStr = lua_pushstring( L, (char*)d.data );
-    Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( internalStr ) );
-    FreeData( &d );
-    FreeTagValue( tv );
-    return 1;
-    }
+
+  if( d.data==NULL )
+    (void)lua_pushstring( L, "" );
+  else
+    (void)lua_pushstring( L, (const char*)d.data );
+
+  Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( d.data ) );
+  FreeData( &d );
+  FreeTagValue( tv );
+  return 1;
   }
 
 int LUASleep( lua_State* L )
