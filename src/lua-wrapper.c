@@ -365,6 +365,18 @@ int LUAWebTransaction( lua_State* L )
   else
     httpHeaders = NewTagValue( "user-agent", userAgent, httpHeaders, 1 );
 
+  for( _TAG_VALUE* head=tv; head!=NULL; head=head->next )
+    {
+    if( NOTEMPTY( head->tag )
+        && strncasecmp( head->tag, "HEADER_", 7 )==0
+        && NOTEMPTY( head->value ) )
+      {
+      char* headerName = head->tag + 7;
+      char* headerValue = head->value;
+      httpHeaders = NewTagValue( headerName, headerValue, httpHeaders, 1 );
+      }
+    }
+
   char* cookiesFile = GetTagValue( tv, "COOKIES_FILE" );
   if( EMPTY( cookiesFile ) )
     cookiesFile = DEFAULT_COOKIES_FILE;
@@ -383,6 +395,10 @@ int LUAWebTransaction( lua_State* L )
   char* errMsg = NULL;
 
   Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
+  /*
+  for( _TAG_VALUE* head=httpHeaders; head!=NULL; head=head->next )
+    Notice( "WebTransaction header: %s: %s", head->tag, head->value );
+  */
 
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
