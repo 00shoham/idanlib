@@ -1192,3 +1192,16 @@ gid_t GetGID( const char* groupName )
   return g->gr_gid;
   }
 
+int DoWeHaveATTY()
+  {
+  char buf[BUFLEN];
+  buf[0] = 0;
+  int err = ReadLineFromCommand( "/usr/bin/tty", buf, sizeof(buf)-1, 1, 1 );
+  if( err!=0 )
+    return -100 + err; /* error running the command */
+  if( strstr( buf, "not a tty" )!=NULL )
+    return -1; /* definitely not a TTY */
+  if( strstr( buf, "/dev/" )!=NULL )
+    return 0; /* definitely a tty */
+  return -2; /* ambiguous - lets assume not */
+  }

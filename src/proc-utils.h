@@ -32,4 +32,6 @@ void KillExistingCommandInstancesGentleFirst( char* commandLine );
 uid_t GetUID( const char* logName );
 gid_t GetGID( const char* groupName );
 
+int DoWeHaveATTY();
+
 #endif
