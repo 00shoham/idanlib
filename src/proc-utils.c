@@ -1230,6 +1230,9 @@ int SendEMail( char* recipient, char* subject, char* body )
   int nBytes = write( writeHandle, body, l );
   if( nBytes<l )
     Warning( "Only managed to write %d of %d bytes to mail command", nBytes, l );
+  l = write( writeHandle, "\n\n", 2 );
+  if( l<2 )
+    Warning( "Failed to write last \\n\\n to mail" );
 
   close( writeHandle );
 
