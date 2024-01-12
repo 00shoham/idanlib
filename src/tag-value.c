@@ -328,6 +328,28 @@ _TAG_VALUE* FindTagValue( _TAG_VALUE* list, char* tagName )
   return retVal;
   }
 
+_TAG_VALUE* FindTagValueByValue( _TAG_VALUE* list, char* value )
+  {
+  _TAG_VALUE* retVal = NULL;
+  if( EMPTY( value ) )
+    {
+    return NULL;
+    }
+
+  while( list!=NULL )
+    {
+    if( NOTEMPTY( list->value)
+        && strcmp(list->value,value)==0 )
+      {
+      retVal = list;
+      break;
+      }
+    list = list->next;
+    }
+
+  return retVal;
+  }
+
 _TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName )
   {
   _TAG_VALUE* retVal = NULL;
