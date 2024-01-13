@@ -1,6 +1,6 @@
 #include "utils.h"
 
-#define DEBUG 1
+/* #define DEBUG 1 */
 
 pthread_mutex_t luaLock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -394,8 +394,8 @@ int LUAWebTransaction( lua_State* L )
   _DATA d = { 0, NULL, NULL };
   char* errMsg = NULL;
 
-  Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
   /*
+  Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
   for( _TAG_VALUE* head=httpHeaders; head!=NULL; head=head->next )
     Notice( "WebTransaction header: %s: %s", head->tag, head->value );
   */
@@ -436,7 +436,8 @@ int LUAWebTransaction( lua_State* L )
   else
     (void)lua_pushstring( L, (const char*)d.data );
 
-  Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( d.data ) );
+  /* web transaction logs this same content already...
+     Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( d.data ) ); */
   FreeData( &d );
   FreeTagValue( tv );
   return 1;
@@ -685,11 +686,8 @@ int LUANotice( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str==NULL )
+    str = "";
 
   Notice( str );
 
@@ -706,11 +704,8 @@ int LUAWarning( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str == NULL )
+    str = "";
 
   Warning( str );
 
@@ -727,11 +722,8 @@ int LUAError( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str==NULL )
+    str = "";
 
   Error( str );
 
