@@ -144,7 +144,7 @@ _TAG_VALUE* LuaTableToTagValue( lua_State *L )
   {
   if( ! lua_istable(L, -1) )
     {
-    Warning( "Top of LUA stack is not a table" );
+    Warning( "Top of LUA stack is not a table (gettop=%d)", lua_gettop(L) );
     return NULL;
     }
 

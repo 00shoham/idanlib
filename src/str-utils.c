@@ -579,7 +579,7 @@ char* EscapeString( uint8_t* rawString, size_t rawLen, char* buf, size_t buflen 
   for( int i=0; i<(int)rawLen; ++i )
     {
     int c = rawString[i];
-    if( isprint( c ) )
+    if( isalnum( c ) || strchr( "~!@#$%^&*()-_=+[{]};:,<.>/?", c)!=NULL )
       *(ptr++) = c;
     else if( ptr+4<endp )
       {
