@@ -1079,10 +1079,6 @@ _TAG_VALUE* ExtractValueFromPath( _TAG_VALUE* tree, _TAG_VALUE* path )
   return NULL;
   }
 
-#define QUOTE '"'
-#define COMMA ','
-#define BACKSLASH '\\'
-
 enum pState
   {
   ps_item_scan,
