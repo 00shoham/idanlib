@@ -2,8 +2,7 @@
 
 char generatedIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char validIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
-
-char* upperHexDigits = "0123456789ABCDEF";
+char upperHexDigits[] = "0123456789ABCDEF";
 
 void FreeArrayOfStrings( char** array, int len )
   {

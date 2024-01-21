@@ -6,6 +6,10 @@
 #define NULLPROTECT( XX ) ((XX)==NULL) ? "NULL" : (char*)(XX)
 #define NULLPROTECTE( XX ) ((XX)==NULL) ? "" : (char*)(XX)
 
+extern char generatedIdentifierChars[];
+extern char validIdentifierChars[];
+extern char upperHexDigits[];
+
 char* TrimHead( char* ptr );
 void TrimTail( char* ptr );
 char* RemoveExtraSpaces( char* raw, int noQuotes );
