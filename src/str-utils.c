@@ -215,7 +215,7 @@ char* StripEOL( char* buf )
   if( buf[0]!=0 )
     {
     char* eos = buf + strlen(buf) - 1;
-    while( (*eos=='\r' || *eos=='\n') && eos>=buf )
+    while( isspace(*eos) && eos>=buf )
       {
       *eos = 0;
       --eos;
