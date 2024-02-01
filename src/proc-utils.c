@@ -1220,3 +1220,73 @@ gid_t GetGID( const char* groupName )
   return g->gr_gid;
   }
 
+int DoWeHaveATTY()
+  {
+  char buf[BUFLEN];
+  buf[0] = 0;
+  int err = ReadLineFromCommand( "/usr/bin/tty", buf, sizeof(buf)-1, 1, 1 );
+  if( err!=0 )
+    return -100 + err; /* error running the command */
+  if( strstr( buf, "not a tty" )!=NULL )
+    return -1; /* definitely not a TTY */
+  if( strstr( buf, "/dev/" )!=NULL )
+    return 0; /* definitely a tty */
+  return -2; /* ambiguous - lets assume not */
+  }
+
+/*  echo "big problem" | mail -s "Big problem" idan */
+int SendEMail( char* recipient, char* subject, char* body )
+  {
+  if( EMPTY( recipient ) )
+    return -1;
+  if( EMPTY( subject ) )
+    return -2;
+  if( EMPTY( body ) )
+    return -3;
+
+  char mailCommand[BUFLEN];
+  snprintf( mailCommand, sizeof(mailCommand)-1, "/usr/bin/mail -s '%s' '%s'",
+            subject, recipient );
+
+  int writeHandle = -1;
+  pid_t child = -1;
+  int err = POpenAndWrite( mailCommand, &writeHandle, &child );
+  if( err )
+    Error( "Cannot popen child to run [%s].", mailCommand );
+
+  int l = strlen( body );
+  int nBytes = write( writeHandle, body, l );
+  if( nBytes<l )
+    Warning( "Only managed to write %d of %d bytes to mail command", nBytes, l );
+  l = write( writeHandle, "\n\n", 2 );
+  if( l<2 )
+    Warning( "Failed to write last \\n\\n to mail" );
+
+  close( writeHandle );
+
+  int retVal = 0;
+  int wStatus;
+  if( waitpid( child, &wStatus, WNOHANG )==-1 )
+    {
+    Notice( "waitpid returned -1 (error.  errno=%d/%s).", errno, strerror( errno ));
+    retVal = -1;
+    }
+
+  if( WIFEXITED( wStatus ) )
+    {
+    Notice( "child exited.");
+    retVal = 0;
+    }
+
+  if( retVal != 0 )
+    {
+    kill( child, SIGHUP );
+    sleep( 1 );
+    kill( child, SIGKILL );
+    }
+
+  if( retVal )
+    retVal += -100;
+
+  return retVal;
+  }

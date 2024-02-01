@@ -6,6 +6,10 @@
 #define NULLPROTECT( XX ) ((XX)==NULL) ? "NULL" : (char*)(XX)
 #define NULLPROTECTE( XX ) ((XX)==NULL) ? "" : (char*)(XX)
 
+extern char generatedIdentifierChars[];
+extern char validIdentifierChars[];
+extern char upperHexDigits[];
+
 char* TrimHead( char* ptr );
 void TrimTail( char* ptr );
 char* RemoveExtraSpaces( char* raw, int noQuotes );
@@ -36,5 +40,8 @@ uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen );
 char* SimpleHash( char* string, int nBytes );
 int IsUnicodeMarkup( char* raw );
 char* UnescapeUnicodeMarkup( char* raw );
+int CountOccurrences( char* pattern, char* search );
+char* SearchAndReplace( char* pattern, char* search, char* replace );
+char* TrimCharsFromTail( char* string, char* tailchars );
 
 #endif

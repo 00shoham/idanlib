@@ -1,6 +1,6 @@
 #include "utils.h"
 
-#define DEBUG 1
+/* #define DEBUG 1 */
 
 pthread_mutex_t luaLock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -144,7 +144,7 @@ _TAG_VALUE* LuaTableToTagValue( lua_State *L )
   {
   if( ! lua_istable(L, -1) )
     {
-    Warning( "Top of LUA stack is not a table" );
+    Warning( "Top of LUA stack is not a table (gettop=%d)", lua_gettop(L) );
     return NULL;
     }
 
@@ -365,6 +365,18 @@ int LUAWebTransaction( lua_State* L )
   else
     httpHeaders = NewTagValue( "user-agent", userAgent, httpHeaders, 1 );
 
+  for( _TAG_VALUE* head=tv; head!=NULL; head=head->next )
+    {
+    if( NOTEMPTY( head->tag )
+        && strncasecmp( head->tag, "HEADER_", 7 )==0
+        && NOTEMPTY( head->value ) )
+      {
+      char* headerName = head->tag + 7;
+      char* headerValue = head->value;
+      httpHeaders = NewTagValue( headerName, headerValue, httpHeaders, 1 );
+      }
+    }
+
   char* cookiesFile = GetTagValue( tv, "COOKIES_FILE" );
   if( EMPTY( cookiesFile ) )
     cookiesFile = DEFAULT_COOKIES_FILE;
@@ -382,7 +394,11 @@ int LUAWebTransaction( lua_State* L )
   _DATA d = { 0, NULL, NULL };
   char* errMsg = NULL;
 
+  /*
   Notice( "WebTransaction: url=%s, method=%s", url, method==HTTP_POST?"POST":"GET" );
+  for( _TAG_VALUE* head=httpHeaders; head!=NULL; head=head->next )
+    Notice( "WebTransaction header: %s: %s", head->tag, head->value );
+  */
 
   CURLcode err =
     WebTransaction( url, method,                           /* url and method */
@@ -407,20 +423,24 @@ int LUAWebTransaction( lua_State* L )
     FreeTagValue( tv );
     return 0;
     }
-  else
-    {
+
 #ifdef DEBUG
-    Notice( "LUA WebTransaction().  URL=%s POST_DATA=[%s] retVal=200/OK retData=[%s]",
-            NULLPROTECT( url ),
-            NULLPROTECT( postData ),
-            NULLPROTECT( (char*)d.data ) );
+  Notice( "LUA WebTransaction().  URL=%s POST_DATA=[%s] retVal=200/OK retData=[%s]",
+          NULLPROTECT( url ),
+          NULLPROTECT( postData ),
+          NULLPROTECT( (char*)d.data ) );
 #endif
-    const char* internalStr = lua_pushstring( L, (char*)d.data );
-    Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( internalStr ) );
-    FreeData( &d );
-    FreeTagValue( tv );
-    return 1;
-    }
+
+  if( d.data==NULL )
+    (void)lua_pushstring( L, "" );
+  else
+    (void)lua_pushstring( L, (const char*)d.data );
+
+  /* web transaction logs this same content already...
+     Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( d.data ) ); */
+  FreeData( &d );
+  FreeTagValue( tv );
+  return 1;
   }
 
 int LUASleep( lua_State* L )
@@ -613,6 +633,49 @@ int LUARegExMatch( lua_State* L )
   return 1;
   }
 
+int LUAReadLineFromCommand( lua_State* L )
+  {
+  char* me = "LUAReadLineFromCommand";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -1 );
+    return 2;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* cmd = GetTagValue( tv, "command" );
+  if( EMPTY( cmd ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: timeout not set", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -2 );
+    return 2;
+    }
+
+  int timeout = GetTagValueInt( tv, "timeout" );
+  if( timeout<1 )
+    timeout = (int)GetTagValueDouble( tv, "timeout" );
+  if( timeout<5 )
+    {
+    timeout = 5;
+    Notice( "%s: timeout not set - setting to 5 seconds", me );
+    }
+
+  char buf[BUFLEN];
+  buf[0] = 0;
+  int result = ReadLineFromCommand( cmd, buf, sizeof(buf)-1, 1, timeout );
+  FreeTagValue( tv );
+
+  lua_pushstring( L, buf );
+  lua_pushnumber( L, result );
+
+  return 2;
+  }
+
 int LUANotice( lua_State* L )
   {
   if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
@@ -623,11 +686,8 @@ int LUANotice( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str==NULL )
+    str = "";
 
   Notice( str );
 
@@ -644,11 +704,8 @@ int LUAWarning( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str == NULL )
+    str = "";
 
   Warning( str );
 
@@ -665,11 +722,8 @@ int LUAError( lua_State* L )
 
   const char* str = lua_tostring( L, -1 );
   lua_remove( L, -1 );
-  if( EMPTY( str ) )
-    {
-    Warning( "%s: Cannot call Notice with empty string" );
-    return 0;
-    }
+  if( str==NULL )
+    str = "";
 
   Error( str );
 
@@ -721,6 +775,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUARegExMatch );
   lua_setglobal( L, "RegExMatch" );
+
+  lua_pushcfunction( L, LUAReadLineFromCommand );
+  lua_setglobal( L, "ReadLineFromCommand" );
 
   // load the libs
   luaL_openlibs(L);

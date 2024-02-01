@@ -78,4 +78,17 @@ extern pthread_mutex_t luaLock;
 
 #define RENEW_SESSION_INTERVAL 30 /* seconds */
 
+#define OPENBR '{'
+#define CLOSEBR '}'
+#define OPENSQ '['
+#define CLOSESQ ']'
+#define QUOTE '"'
+#define COMMA ','
+#define COLON ':'
+#define EQUALS '='
+#define BACKSLASH '\\'
+
+#define MIN(A,B) ((A)<(B)?(A):(B))
+#define MAX(A,B) ((A)>(B)?(A):(B))
+
 #endif

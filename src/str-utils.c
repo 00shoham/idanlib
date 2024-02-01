@@ -2,8 +2,7 @@
 
 char generatedIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char validIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
-
-char* upperHexDigits = "0123456789ABCDEF";
+char upperHexDigits[] = "0123456789ABCDEF";
 
 void FreeArrayOfStrings( char** array, int len )
   {
@@ -216,7 +215,7 @@ char* StripEOL( char* buf )
   if( buf[0]!=0 )
     {
     char* eos = buf + strlen(buf) - 1;
-    while( (*eos=='\r' || *eos=='\n') && eos>=buf )
+    while( isspace(*eos) && eos>=buf )
       {
       *eos = 0;
       --eos;
@@ -579,7 +578,7 @@ char* EscapeString( uint8_t* rawString, size_t rawLen, char* buf, size_t buflen 
   for( int i=0; i<(int)rawLen; ++i )
     {
     int c = rawString[i];
-    if( isprint( c ) )
+    if( isalnum( c ) || strchr( "~!@#$%^&*()-_=+[{]};:,<.>/?", c)!=NULL )
       *(ptr++) = c;
     else if( ptr+4<endp )
       {
@@ -727,3 +726,129 @@ char* UnescapeUnicodeMarkup( char* raw )
 
   return clean;
   }
+
+int CountOccurrences( char* pattern, char* search )
+  {
+  if( EMPTY( pattern ) || EMPTY( search ) )
+    return 0;
+
+  int lSearch = strlen( search );
+
+  int n = 0;
+  for(;;)
+    {
+    char* find = strstr( pattern, search );
+    if( find==NULL )
+      break;
+
+    ++n;
+    pattern = find + lSearch;
+    }
+
+  return n;
+  }
+
+char* SearchAndReplace( char* pattern, char* search, char* replace )
+  {
+  if( EMPTY( pattern ) || EMPTY( search ) || replace==NULL )
+    return NULL;
+
+  int n = CountOccurrences( pattern, search );
+
+  int lPattern = strlen( pattern );
+  int lSearch = strlen( search );
+  int lReplace = strlen( replace );
+
+  int finalLen = lPattern + n * (lReplace - lSearch);
+  if( finalLen<0 )
+    {
+    Warning( "SearchAndReplace(%s,%s,%s) - finalLen is an implausible %d", pattern, search, replace, finalLen );
+    return NULL;
+    }
+
+  char* output = (char*)SafeCalloc( finalLen+10, sizeof( char ), "SearchAndReplace() output buffer" );
+  char* ptr = output;
+  char* endPtr = output + finalLen;
+  char* endPattern = pattern + lPattern;
+
+  for( char* match=strstr( pattern, search); match!=NULL; match=strstr( pattern, search) )
+    {
+    int chunkLen = match-pattern;
+    if( ptr + chunkLen > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (A)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, pattern, chunkLen );
+    ptr += (match-pattern);
+    *ptr = 0;
+
+    if( ptr+lReplace > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (B)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, replace, lReplace );
+    ptr += lReplace;
+    *ptr = 0;
+
+    pattern += chunkLen;
+    pattern += lSearch;
+    }
+
+  if( pattern<endPattern )
+    {
+    int chunkLen = endPattern-pattern;
+    if( ptr + chunkLen > endPtr )
+      {
+      Warning( "SearchAndReplace(%s,%s,%s) - buffer overflow (C)", pattern, search, replace );
+      free( output );
+      return NULL;
+      }
+
+    memcpy( ptr, pattern, chunkLen );
+    ptr += (endPattern-pattern);
+    *ptr = 0;
+    }
+
+  return output;
+  }
+
+char* TrimCharsFromTail( char* string, char* tailchars )
+  {
+  if( EMPTY( string ) )
+    return string;
+
+  if( EMPTY( tailchars ) )
+    return string;
+
+  int l = strlen( string );
+  char* endp = string + l - 1;
+
+  int n = strlen( tailchars );
+
+  for( char* ptr=endp; ptr>=string; --ptr )
+    {
+    int found = 0;
+    int c = *ptr;
+    for( int i=0; i<n; ++i )
+      {
+      int q = tailchars[i];
+      if( q==c )
+        {
+        *ptr = 0;
+        found = 1;
+        break;
+        }
+      }
+    if( ! found )
+      break;
+    }
+
+  return string;
+  }
+

@@ -2,15 +2,6 @@
 
 /* this parser only works for simple JSON - without arrays. */
 
-#define OPENBR '{'
-#define CLOSEBR '}'
-#define OPENSQ '['
-#define CLOSESQ ']'
-#define QUOTE '"'
-#define COMMA ','
-#define COLON ':'
-#define BS '\\'
-
 /* {"temp":70.00,
     "tmode":1,
     "fmode":0,
@@ -80,7 +71,7 @@ char* GetBracketedString( char* string )
     c = *src;
     if( inQuote )
       {
-      if( c==BS && ! bsState )
+      if( c==BACKSLASH && ! bsState )
         bsState = 1;
       else if( bsState )
         bsState = 0;
@@ -278,7 +269,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_LIST_QUOTED_VALUE:
-        if( c==BS )
+        if( c==BACKSLASH )
           {
           backSlashStatus = backSlashStatus ? 0 : 1;
           }
@@ -351,7 +342,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_PAIR_QUOTED_TAG:
-        if( c==BS )
+        if( c==BACKSLASH )
           {
           backSlashStatus = backSlashStatus ? 0 : 1;
           }
@@ -476,7 +467,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_PAIR_QUOTED_VALUE:
-        if( c==BS && backSlashStatus==0 )
+        if( c==BACKSLASH && backSlashStatus==0 )
           backSlashStatus = 1;
         else if( backSlashStatus )
           backSlashStatus = 0;
