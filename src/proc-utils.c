@@ -49,6 +49,11 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     close( readFD );
     dup2( writeFD, 1 );
     close( writeFD );
+    /*
+    Notice( "Calling execv() with cmd %s", args->argv[0] );
+    for( int i=0; args->argv[i]!=NULL; ++i )
+      Notice( " .. argv[%d] = [%s]", i, args->argv[i] );
+    */
     (void)execv( args->argv[0], args->argv );
     /* end of code */
     }
@@ -366,11 +371,24 @@ int AsyncReadFromChildProcess( char* cmd,
 
 int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, int maxtimeSeconds )
   {
+  if( EMPTY( cmd ) )
+    return -10;
+  if( buf==NULL )
+    return -11;
+  if( bufSize<10 )
+    return -12;
+  if( timeoutSeconds<1 )
+    return -13;
+  if( maxtimeSeconds<=timeoutSeconds )
+    return -14;
+
   int fileDesc = -1;
   pid_t child = -1;
 
   int err = POpenAndRead( cmd, &fileDesc, &child );
   if( err ) Error( "Cannot popen child to run [%s].", cmd );
+
+  Notice( "ReadLineFromCommand(%s) - fileDesc=%d", cmd, fileDesc );
 
   char* ptr = buf;
   char* endPtr = buf + bufSize - 2;
@@ -383,6 +401,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
+      Notice( "ReadLineFromCommand(%s) - timeout", cmd );
       retVal = -3;
       break;
       }
@@ -398,21 +417,26 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
     
+    Notice( "ReadLineFromCommand(%s) - calling select()", cmd );
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+    Notice( "ReadLineFromCommand(%s) - select() returned %d", cmd, result );
     if( result>0 )
       {
       int nBytes = read( fileDesc, ptr, endPtr-ptr );
+      Notice( "ReadLineFromCommand(%s) - read %d bytes", cmd, nBytes );
       if( nBytes>0 )
         {
         ptr += nBytes;
         *ptr = 0;
         if( strchr( buf, '\n' )!=NULL )
           {
+          Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd );
           break;
           }
         }
       }
 
+    Notice( "ReadLineFromCommand(%s) - waitpid()", cmd );
     int wStatus;
     if( waitpid( child, &wStatus, WNOHANG )==-1 )
       {
@@ -421,6 +445,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       break;
       }
 
+    Notice( "ReadLineFromCommand(%s) - WIFEXITED( %d )", cmd, wStatus );
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
@@ -430,13 +455,16 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       }
     }
 
+  Notice( "ReadLineFromCommand(%s) - closing", cmd );
   close( fileDesc );
 
   if( ! exited )
     {
+    Notice( "ReadLineFromCommand(%s) - child did not exit - kill it", cmd );
     kill( child, SIGHUP );
     }
 
+  Notice( "ReadLineFromCommand(%s) - returning %d", cmd, retVal );
   return retVal;
   }
 
