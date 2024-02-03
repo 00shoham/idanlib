@@ -985,8 +985,8 @@ _TAG_VALUE* AppendValue( char* buf, _TAG_VALUE* workingHeaders )
     }
 
   if( workingHeaders->tag!=NULL
-      && strcmp( workingHeaders->tag,"value")==0
-      && workingHeaders->value!=NULL )
+      && workingHeaders->value!=NULL
+      && strcmp( workingHeaders->tag,"value")==0 )
     {
     int l = strlen( workingHeaders->value ) + strlen( buf ) + 5;
     char* tmp = calloc( l, sizeof( char ) );
