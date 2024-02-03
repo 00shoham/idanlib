@@ -667,6 +667,13 @@ uint8_t* UnescapeString( char* src, uint8_t* dst, size_t buflen )
       int cc = (h << 4) | l;
       *(ptr++) = cc;
       }
+    else if( c=='\\'
+             && (p+1)<endsrc )
+      {
+      ++p;
+      c = *p;
+      *(ptr++) = c;
+      }
     else
       {
       *(ptr++) = c;
