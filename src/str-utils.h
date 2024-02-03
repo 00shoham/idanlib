@@ -15,6 +15,7 @@ void TrimTail( char* ptr );
 char* RemoveExtraSpaces( char* raw, int noQuotes );
 void GenerateIdentifier( char* buf, int nChars );
 char* StripQuotes( char* buf );
+char* EscapeQuotes( char* buf );
 char* StripEOL( char* buf );
 void ChompEOL( FILE* stream );
 int StringStartsWith( const char* string, const char* prefix, int caseSensitive );

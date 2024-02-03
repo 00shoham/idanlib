@@ -171,7 +171,7 @@ int StringIsAnIdentifier( char* str )
   return 0;
   }
 
-/* Modify a string such that any trailing " marks are replaced with
+/* Modify a string such that any trailing " mark is replaced with
  * '\0' and return a pointer to the first non-" characters in it.
  * Effectively the return string is a version of the input string
  * but without quotes.  Note that the input string is modified.
@@ -194,6 +194,43 @@ char* StripQuotes( char* buf )
     }
 
   return buf;
+  }
+
+char* EscapeQuotes( char* buf )
+  {
+  if( EMPTY( buf ) )
+    {
+    return buf;
+    }
+
+  int nQuotes = 0;
+  char* ptr = NULL;
+  for( ptr=buf; *ptr!=0; ++ptr )
+    if( *ptr==QUOTE )
+      ++nQuotes;
+  int l = ptr - buf;
+  l += nQuotes;
+
+  char* newStr = (char*)SafeCalloc( l+10, sizeof(char), "String with quotes escaped" );
+  if( nQuotes==0 )
+    {
+    strcpy( newStr, buf );
+    return newStr;
+    }
+
+  char* src = buf;
+  char* dst = newStr;
+  for( ; *src!=0; ++src, ++dst )
+    {
+    if( *src == QUOTE )
+      {
+      *(dst++) = BACKSLASH;
+      }
+    *dst = *src;
+    }
+  *dst = 0;
+
+  return newStr;
   }
 
 /* Remove leading and trailing CR and LF chars from a string.
