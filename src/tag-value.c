@@ -2,8 +2,11 @@
 
 enum valueType GuessType( char* str )
   {
-  if( EMPTY( str ) )
+  if( str==NULL )
     return VT_INVALID;
+
+  if( *str==0 )
+    return VT_STR;
 
   if( ( (*str)=='-' && AllDigits( str+1 ) )
       || AllDigits( str ) )
@@ -556,11 +559,18 @@ int CompareTagValueListBidirectional( _TAG_VALUE* a, _TAG_VALUE* b )
 void PrintTagValue( int indent, _TAG_VALUE* list )
   {
   if( indent<0 || indent>100 )
+    {
+    Warning( "PrintTagValue() - bad indent" );
     return;
-  if( list==NULL )
-    return;
+    }
 
-  char indentBuf[200];
+  if( list==NULL )
+    {
+    Warning( "PrintTagValue() - NULL list" );
+    return;
+    }
+
+  char indentBuf[250];
   memset( indentBuf, ' ', indent );
   indentBuf[indent] = 0;
 
@@ -569,12 +579,13 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
   char* end = printLine + sizeof(printLine) - 1;
 
   strncpy( ptr, indentBuf, end-ptr );
-    ptr += strlen( ptr );
+    ptr += indent;
+
   if( list->tag!=NULL )
     {
     strncpy( ptr, "\"", end-ptr );
       ptr += strlen( ptr );
-    strncpy( ptr, NULLPROTECT( list->tag ), end-ptr );
+    strncpy( ptr, list->tag, end-ptr );
       ptr += strlen( ptr );
     strncpy( ptr, "\"", end-ptr );
       ptr += strlen( ptr );
@@ -591,6 +602,8 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
     {
     case VT_INVALID:
       if( list->subHeaders!=NULL )
+        {}
+      else if( list->tag==NULL )
         {}
       else
         Warning( "Printing tags - [%s] has invalid type", NULLPROTECT( list->tag ) );
@@ -609,7 +622,12 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
       ptr += strlen( ptr );
       break;
     case VT_STR:
-      if( list->value!=NULL )
+      if( EMPTY( list->value ) )
+        {
+        strncpy( ptr, "\"\"", end-ptr );
+          ptr += strlen( ptr );
+        }
+      else
         {
         strncpy( ptr, "\"", end-ptr );
           ptr += strlen( ptr );

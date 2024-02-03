@@ -71,14 +71,15 @@ char* GetBracketedString( char* string )
     c = *src;
     if( inQuote )
       {
-      if( c==BACKSLASH && ! bsState )
-        bsState = 1;
-      else if( bsState )
-        bsState = 0;
-
-      if( c==QUOTE && bsState==0 )
+      if( c==BACKSLASH )
+        bsState = bsState ? 0 : 1;
+      else
         {
-        inQuote = 0;
+        if( c==QUOTE && bsState==0 )
+          {
+          inQuote = 0;
+          }
+        bsState = 0;
         }
       }
     else
@@ -179,9 +180,9 @@ _TAG_VALUE* ParseJSON( const char* string )
     {
     int c = *ptr;
     /* DEBUG
-    printf( "%03d - %03d - %03d - %s - %c\n",
+    printf( "%03d - %03d - %03d - %s - %d - %c\n",
             cNum, (int)(ptr-workingBuffer), (int)(endOfBuffer-ptr),
-            ParseStateName(state), c);
+            ParseStateName(state), backSlashStatus, c);
     */
     switch( state )
       {
@@ -270,16 +271,19 @@ _TAG_VALUE* ParseJSON( const char* string )
 
       case PS_IN_LIST_QUOTED_VALUE:
         if( c==BACKSLASH )
-          {
           backSlashStatus = backSlashStatus ? 0 : 1;
-          }
-        else if( c==QUOTE && ! backSlashStatus )
+        else
           {
-          *ptr = 0;
-          last = NewTagValueGuessType( NULL, value, NULL, 0 );
-          list = AppendTagValue( list, last );
-          state = PS_IN_LIST_PRE_COMMA;
+          if( c==QUOTE && ! backSlashStatus )
+            {
+            *ptr = 0;
+            last = NewTagValueGuessType( NULL, value, NULL, 0 );
+            list = AppendTagValue( list, last );
+            state = PS_IN_LIST_PRE_COMMA;
+            }
+          backSlashStatus = 0;
           }
+
         break;
 
       case PS_IN_LIST_RAW_VALUE:
