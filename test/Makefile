@@ -9,6 +9,7 @@ BIN=\
   json-parse-test-2\
   json-parse-test-3\
   json-parse-test-4\
+  json-parse-test-5\
   lua-test\
   print-env-from-cgi\
   regexp-test\

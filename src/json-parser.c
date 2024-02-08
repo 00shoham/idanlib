@@ -471,10 +471,12 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_PAIR_QUOTED_VALUE:
+        int setBackSlash = 0;
         if( c==BACKSLASH && backSlashStatus==0 )
+          {
           backSlashStatus = 1;
-        else if( backSlashStatus )
-          backSlashStatus = 0;
+          setBackSlash = 1;
+          }
 
         if( c==QUOTE && ! backSlashStatus )
           {
@@ -483,6 +485,9 @@ _TAG_VALUE* ParseJSON( const char* string )
           list = AppendTagValue( list, last );
           state = PS_IN_PAIR_PRE_COMMA;
           }
+
+        if( ! setBackSlash )
+          backSlashStatus = 0;
         break;
 
       case PS_IN_PAIR_PRE_COMMA:
