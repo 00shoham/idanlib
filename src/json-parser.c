@@ -277,7 +277,9 @@ _TAG_VALUE* ParseJSON( const char* string )
           if( c==QUOTE && ! backSlashStatus )
             {
             *ptr = 0;
-            last = NewTagValueGuessType( NULL, value, NULL, 0 );
+            uint8_t cleanBuffer[BUFLEN];
+            uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+            last = NewTagValueGuessType( NULL, (char*)cleanValue, NULL, 0 );
             list = AppendTagValue( list, last );
             state = PS_IN_LIST_PRE_COMMA;
             }
@@ -297,7 +299,9 @@ _TAG_VALUE* ParseJSON( const char* string )
             }
           else
             {
-            last = NewTagValueGuessType( NULL, value, NULL, 0 );
+            uint8_t cleanBuffer[BUFLEN];
+            uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+            last = NewTagValueGuessType( NULL, (char*)cleanValue, NULL, 0 );
             list = AppendTagValue( list, last );
             }
           state = PS_IN_LIST_PRE_COMMA;
@@ -305,14 +309,18 @@ _TAG_VALUE* ParseJSON( const char* string )
         else if( c==COMMA )
           {
           *ptr = 0;
-          last = NewTagValueGuessType( NULL, value, NULL, 0 );
+          uint8_t cleanBuffer[BUFLEN];
+          uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+          last = NewTagValueGuessType( NULL, (char*)cleanValue, NULL, 0 );
           list = AppendTagValue( list, last );
           state = PS_PRE_LIST;
           }
         else if( c==CLOSESQ )
           {
           *ptr = 0;
-          last = NewTagValueGuessType( NULL, value, NULL, 0 );
+          uint8_t cleanBuffer[BUFLEN];
+          uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+          last = NewTagValueGuessType( NULL, (char*)cleanValue, NULL, 0 );
           list = AppendTagValue( list, last );
           /* QQQ if we have a tag, make the list its value. */
           state = PS_IN_PAIR_PRE_COMMA;
@@ -399,7 +407,6 @@ _TAG_VALUE* ParseJSON( const char* string )
             printf( "Got bracketed string: [%s]", inBR );
             */
             }
-          /* QQQ problem is here? */
           last = NewTagValueList( tag, ParseJSON( inBR ), NULL, 0 );
           list = AppendTagValue( list, last );
           ptr += strlen( inBR ) - 1;
@@ -450,7 +457,9 @@ _TAG_VALUE* ParseJSON( const char* string )
             }
           else
             {
-            last = NewTagValueGuessType( tag, value, NULL, 0 );
+            uint8_t cleanBuffer[BUFLEN];
+            uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+            last = NewTagValueGuessType( tag, (char*)cleanValue, NULL, 0 );
             list = AppendTagValue( list, last );
             }
           }
@@ -458,13 +467,17 @@ _TAG_VALUE* ParseJSON( const char* string )
           {
           *ptr = 0;
           state = PS_PRE_PAIR;
-          last = NewTagValueGuessType( tag, value, NULL, 0 );
+          uint8_t cleanBuffer[BUFLEN];
+          uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+          last = NewTagValueGuessType( tag, (char*)cleanValue, NULL, 0 );
           list = AppendTagValue( list, last );
           }
         else if( c==CLOSEBR )
           {
           *ptr = 0;
-          last = NewTagValueGuessType( tag, value, NULL, 0 );
+          uint8_t cleanBuffer[BUFLEN];
+          uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+          last = NewTagValueGuessType( tag, (char*)cleanValue, NULL, 0 );
           list = AppendTagValue( list, last );
           state = PS_PRE_OPENBR;
           }
@@ -481,7 +494,10 @@ _TAG_VALUE* ParseJSON( const char* string )
         if( c==QUOTE && ! backSlashStatus )
           {
           *ptr = 0;
-          last = NewTagValue( tag, value, NULL, 0 );
+
+          uint8_t cleanBuffer[BUFLEN];
+          uint8_t* cleanValue = UnescapeString( value, cleanBuffer, sizeof(cleanBuffer)-1 );
+          last = NewTagValue( tag, (char*)cleanValue, NULL, 0 );
           list = AppendTagValue( list, last );
           state = PS_IN_PAIR_PRE_COMMA;
           }
