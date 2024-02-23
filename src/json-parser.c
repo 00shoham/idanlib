@@ -484,6 +484,7 @@ _TAG_VALUE* ParseJSON( const char* string )
         break;
 
       case PS_IN_PAIR_QUOTED_VALUE:
+        {
         int setBackSlash = 0;
         if( c==BACKSLASH && backSlashStatus==0 )
           {
@@ -504,6 +505,7 @@ _TAG_VALUE* ParseJSON( const char* string )
 
         if( ! setBackSlash )
           backSlashStatus = 0;
+        }
         break;
 
       case PS_IN_PAIR_PRE_COMMA:
