@@ -48,6 +48,7 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     fflush( stdout );
     close( readFD );
     dup2( writeFD, 1 );
+    dup2( writeFD, 2 );
     close( writeFD );
     /*
     Notice( "Calling execv() with cmd %s", args->argv[0] );
