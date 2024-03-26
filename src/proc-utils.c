@@ -45,7 +45,6 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     NARGV* args = nargv_parse( cmd );
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
-    fflush( stdout );
     close( readFD );
     dup2( writeFD, 1 );
     dup2( writeFD, 2 );
@@ -261,7 +260,8 @@ int POpenAndWrite( const char *cmd, int* writePtr, pid_t* childPtr )
     NARGV* args = nargv_parse( cmd );
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
-    fflush( stdout );
+    /* could be dup - in parent *and* child: */
+    /* fflush( stdout ); */
     close( writeFD );
     dup2( readFD, 0 );
     close( readFD );
