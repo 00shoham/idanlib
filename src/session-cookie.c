@@ -116,6 +116,7 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
   for( char* line = strtok_r( (char*)plaintext, "\r\n", &ptr );
        line!=NULL; line = strtok_r( NULL, "\r\n", &ptr ) )
     {
+    /* Notice( "GetIdentityFromCookie() - decrypted line: [%s]", line ); */
     if( strncmp( line, "USER:", 5 )==0 )
       {
       char* pUser = line + 5;
