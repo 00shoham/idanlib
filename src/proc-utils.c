@@ -99,6 +99,37 @@ int POpenAndSearch( const char *cmd, char* subString, char** result )
   return -2;
   }
 
+int POpenAndSearchRegEx( const char *cmd, char* regex, char** result )
+  {
+  if( EMPTY( cmd ) || EMPTY( regex ) )
+    return -1;
+
+  int fileDesc = -1;
+  pid_t child = -1;
+  int err = POpenAndRead( cmd, &fileDesc, &child );
+  if( err ) Error( "Cannot popen child [%s].", cmd );
+
+  int flags = fcntl( fileDesc, F_GETFL);
+  flags &= ~O_NONBLOCK;
+  fcntl( fileDesc, F_SETFL, flags);
+
+  FILE* f = fdopen( fileDesc, "r" );
+  char buf[BUFLEN];
+  while( fgets( buf, sizeof(buf)-1, f )==buf )
+    {
+    if( StringMatchesRegex( regex, buf )==0 )
+      {
+      fclose( f );
+      if( result!=NULL )
+        *result = strdup( buf );
+      return 0;
+      }
+    }
+
+  fclose( f );
+  return -2;
+  }
+
 int POpenAndSearchMultipleResults( const char *cmd, char* subString, char** result )
   {
   if( EMPTY( cmd ) || EMPTY( subString ) )
