@@ -2,6 +2,7 @@
 
 char generatedIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char validIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+char validFolderChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/";
 char upperHexDigits[] = "0123456789ABCDEF";
 
 void FreeArrayOfStrings( char** array, int len )
@@ -160,6 +161,29 @@ int StringIsAnIdentifier( char* str )
       {
       int c = *str;
       char* ptr = strchr( validIdentifierChars, c );
+      if( ptr==NULL )
+        {
+        return -2;
+        }
+      ++str;
+      }
+    }
+
+  return 0;
+  }
+
+int StringIsSimpleFolder( char* str )
+  {
+  if( EMPTY( str ) )
+    {
+    return -1;
+    }
+  else
+    {
+    while( *str!=0 )
+      {
+      int c = *str;
+      char* ptr = strchr( validFolderChars, c );
       if( ptr==NULL )
         {
         return -2;
