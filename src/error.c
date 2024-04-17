@@ -89,8 +89,11 @@ void Error( const char* fmt, ... )
   vsnprintf( buf, sizeof(buf)-1, fmt, arglist );
   va_end( arglist );
 
-  if( inCGI>1 )
+  if( inCGI>1 && printedContentType==0 )
+    {
     fputs( "Content-Type: text/html\r\n\r\n", stdout );
+    printedContentType = 1;
+    }
 
   if( inCGI )
     {
@@ -122,6 +125,12 @@ void APIError( const char* methodName, int errorCode, const char* fmt, ... )
   response = NewTagValueInt( "code", errorCode, response, 1 );
   response = NewTagValue( "result", errmsg, response, 1 );
   ListToJSON( response, responseBuf, sizeof(responseBuf)-1 );
+
+  if( inCGI>1 && printedContentType==0 )
+    {
+    fputs( "Content-Type: application/json\r\n\r\n", stdout );
+    printedContentType = 1;
+    }
 
   fputs( responseBuf, stdout );
   fputs( "\r\n", stdout );

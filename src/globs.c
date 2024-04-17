@@ -9,6 +9,7 @@ int glob_argc = 0;
 char** glob_argv = NULL;
 int inDaemon = 0;
 int inCGI = 0;
+int printedContentType = 0;
 
 void EmergencyCloseHandles()
   {

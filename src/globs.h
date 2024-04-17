@@ -10,6 +10,7 @@ extern int glob_argc;
 extern char** glob_argv;
 extern int inDaemon;
 extern int inCGI;
+extern int printedContentType;
 
 void EmergencyCloseHandles();
 
