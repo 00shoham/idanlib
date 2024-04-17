@@ -456,6 +456,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
     if( cm==cm_ui )
       {
       printf("Content-Type: text/html\r\n\r\n");
+      printedContentType = 1;
       printf( "<html><body><b>Configuration problem: what env variable carries the user ID and/or authentication cookie?</b></body></html>\n" );
       exit(0);
       }
@@ -504,6 +505,7 @@ char* ExtractUserIDOrDieEx( enum callMethod cm,
     if( cm==cm_ui )
       {
       printf("Content-Type: text/html\r\n\r\n");
+      printedContentType = 1;
       printf( "<html><body><b>Cannot discern user name from variable %s</b></body></html>\n", userVar );
       exit(0);
       }

@@ -317,6 +317,7 @@ CURLcode WebTransaction( char* url,
         {
         char buf[BUFLEN];
         snprintf( buf, sizeof(buf)-1, "Content-Type: %s", postContentType );
+
         hs = curl_slist_append( hs, buf );
         ++nHeaders;
         }

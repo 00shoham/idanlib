@@ -664,6 +664,8 @@ void CGIHeader( char* contentType,
   if( NOTEMPTY( contentType ) )
     {
     printf( "Content-Type: %s\r\n", contentType );
+    printedContentType = 1;
+
     if( contentLength>0 )
       {
       printf( "Content-Length: %ld\r\n", contentLength );
@@ -675,6 +677,7 @@ void CGIHeader( char* contentType,
     }
 
   fputs( "Content-Type: text/html; Charset=US-ASCII\r\n\r\n", stdout );
+  printedContentType = 1;
 
   fputs( "<!doctype html>\n", stdout);
   fputs( "<html lang=\"en\">\n", stdout);
@@ -896,6 +899,7 @@ void DownloadFile( long filesize, char* path, char* fileName )
     }
 
   printf( "Content-Type: application/octet-stream\r\n");
+  printedContentType = 1;
   printf( "Content-Disposition: attachment; filename=\"%s\"\r\n",
           fileName==NULL ? "no-name-file" : fileName );
   printf( "Content-Length: %ld\r\n", filesize );
@@ -920,6 +924,7 @@ void DownloadFile( long filesize, char* path, char* fileName )
 void DownloadChunkedStream( int fd, char* fileName )
   {
   printf( "Content-Type: application/octet-stream\r\n");
+  printedContentType = 1;
   printf( "Content-Disposition: attachment; filename=\"%s\"\r\n",
           fileName==NULL ? "no-name-file" : fileName );
 
@@ -956,6 +961,7 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
     if( cm==cm_ui )
       {
       printf("Content-Type: text/html\r\n\r\n");
+      printedContentType = 1;
       printf( "<html><body><b>Configuration problem: what variable carries the user ID?</b></body></html>\n" );
       exit(0);
       }
@@ -969,6 +975,7 @@ char* ExtractUserIDOrDie( enum callMethod cm, char* envVarName )
     if( cm==cm_ui )
       {
       printf("Content-Type: text/html\r\n\r\n");
+      printedContentType = 1;
       printf( "<html><body><b>Cannot discern user name from variable %s</b></body></html>\n", userVar );
       exit(0);
       }
@@ -1517,6 +1524,7 @@ void RedirectToUrl( char* url, char* cssPath )
   printf( "Status: 302\n" );
   printf( "Location: %s\n", passUrl );
   printf( "Content-Type: text/html\r\n\r\n" );
+  printedContentType = 1;
   printf( "<html>\n" );
   printf( "  <head>\n" );
   printf( "    <title>Redirect</title>\n" );

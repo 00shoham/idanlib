@@ -5,6 +5,7 @@ extern char** environ;
 int main()
   {
   fputs("Content-Type: text/html\r\n\r\n", stdout );
+  printedContentType = 1;
   fputs("<html>\n", stdout);
   fputs("  <head>\n", stdout);
   fputs("    <title>Environment variables</title>\n", stdout);
