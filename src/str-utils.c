@@ -920,3 +920,42 @@ char* TrimCharsFromTail( char* string, char* tailchars )
   return string;
   }
 
+char* AppendCharToSizedBuffer( char* dst, char* end, int c )
+  {
+  if( dst >= (end-1) )
+    return dst;
+  *(dst) = c;
+  ++dst;
+  *dst = 0;
+  return dst;
+  }
+
+char* TexEscape( char* buf, size_t bufLen, char* original )
+  {
+  if( buf==NULL || bufLen<=0 || original==NULL )
+    return original;
+
+  char* dst = buf;
+  char* end = buf + bufLen - 1;
+  for( char* src=original; *src!=0; ++src )
+    {
+    int c= *src;
+    if( strchr( "{}[]#%_", c )!=NULL )
+      {
+      dst = AppendCharToSizedBuffer( dst, end, BACKSLASH );
+      dst = AppendCharToSizedBuffer( dst, end, c );
+      }
+    else if( c==BACKSLASH )
+      {
+      dst = AppendCharToSizedBuffer( dst, end, BACKSLASH );
+      dst = AppendCharToSizedBuffer( dst, end, 'B' );
+      dst = AppendCharToSizedBuffer( dst, end, 'S' );
+      dst = AppendCharToSizedBuffer( dst, end, '{' );
+      dst = AppendCharToSizedBuffer( dst, end, '}' );
+      }
+    else
+      dst = AppendCharToSizedBuffer( dst, end, c );
+    }
+
+  return buf;
+  }

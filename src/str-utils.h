@@ -45,5 +45,7 @@ char* UnescapeUnicodeMarkup( char* raw );
 int CountOccurrences( char* pattern, char* search );
 char* SearchAndReplace( char* pattern, char* search, char* replace );
 char* TrimCharsFromTail( char* string, char* tailchars );
+char* AppendCharToSizedBuffer( char* dst, char* end, int c );
+char* TexEscape( char* buf, size_t bufLen, char* original );
 
 #endif

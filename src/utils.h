@@ -87,6 +87,7 @@ extern pthread_mutex_t luaLock;
 #define COLON ':'
 #define EQUALS '='
 #define BACKSLASH '\\'
+#define PERCENT '%'
 
 #define MIN(A,B) ((A)<(B)?(A):(B))
 #define MAX(A,B) ((A)>(B)?(A):(B))
