@@ -158,10 +158,14 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
       if( userAgent!=NULL )
         hash = SimpleHash( userAgent, USER_AGENT_HASH_LEN );
 
+#if 0
       if( strcmp( uAgent, userAgent )==0 )
         { /* okay - plaintext user agent the same */ }
-      else if( hash!=NULL && strcmp( uAgent, hash )==0)
-        { /* okay - hash user agent the same */ }
+      else
+#endif
+      if( NOTEMPTY( hash ) && strcmp( uAgent, hash )==0)
+        { /* okay - hash user agent the same */
+        }
       else
         {
         Warning( "User has changed user agent (from %s to %s / %s)",
@@ -364,7 +368,7 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
       }
     }
 
-  char* remoteAddr = getenv( DEFAULT_REMOTE_ADDR );
+  char* remoteAddr = getenv( EMPTY( remoteAddrVar ) ? DEFAULT_REMOTE_ADDR : remoteAddrVar );
   if( remoteAddr==NULL )
     {
     Warning( "No remote address" );
@@ -373,8 +377,8 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
   else
     Notice( "GetValidatedUserIDFromHttpHeaders() - remoteAddr == [%s]", NULLPROTECT( remoteAddr ) );
 
-  char* userAgent = getenv( userAgentVar==NULL ? DEFAULT_USER_AGENT_VAR : userAgentVar );
-  if( userAgent==NULL )
+  char* userAgent = getenv( EMPTY( userAgentVar ) ? DEFAULT_USER_AGENT_VAR : userAgentVar );
+  if( EMPTY( userAgent ) )
     {
     Warning( "No user agent" );
     return NULL;
