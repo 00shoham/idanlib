@@ -407,7 +407,12 @@ char* GetValidatedUserIDFromHttpHeaders( uint8_t* key,
     {
     time_t tNow = time(NULL);
     time_t tExpiry = tNow + duration;
-    if( tExpiry - expiry >= RENEW_SESSION_INTERVAL )
+    int autoRenewSeconds = MIN_RENEW_SESSION_INTERVAL; /* default - short sessions should renew within 30 seconds of expiry */
+
+    if( duration > 3600 ) /* heuristic - long sessions should renew on activity within 5 minutes of expiry */
+      autoRenewSeconds = 600;
+
+    if( tExpiry - expiry >= autoRenewSeconds )
       {
       Notice( "Extending session of %s on Hash(%s) at %s by %d seconds",
           NULLPROTECT( userID ),
