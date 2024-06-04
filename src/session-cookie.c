@@ -155,7 +155,7 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
         return -8;
         }
       char* hash = NULL;
-      if( userAgent!=NULL )
+      if( NOTEMPTY( userAgent ) )
         hash = SimpleHash( userAgent, USER_AGENT_HASH_LEN );
 
 #if 0
@@ -163,7 +163,8 @@ int GetIdentityFromCookie( char* cookie, char** userPtr,
         { /* okay - plaintext user agent the same */ }
       else
 #endif
-      if( NOTEMPTY( hash ) && strcmp( uAgent, hash )==0)
+      if( NOTEMPTY( hash )
+          && ( strcmp( uAgent, hash )==0 || strcmp( uAgent, userAgent )==0 ) )
         { /* okay - hash user agent the same */
         }
       else
@@ -321,14 +322,14 @@ int PrintSessionCookie( char* cookieVarName,
 
   char* userAgentHash = SimpleHash( uagt, USER_AGENT_HASH_LEN );
 
-  /* DEBUG
+
+  /* QQQ */
   Notice( "PrintSessionCookie(): user=%s, addr=%s, uah=%s, ttl=%d, key=%s",
           NULLPROTECT( userID ),
           NULLPROTECT( addr ),
           NULLPROTECT( userAgentHash ),
           ttlSeconds,
           key==NULL || *key==0 ? "nil" : "value" );
-  */
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
