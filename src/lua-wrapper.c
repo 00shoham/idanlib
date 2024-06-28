@@ -536,22 +536,24 @@ int LUAHexStringToNumber( lua_State* L )
     }
 
   const char* str = lua_tostring( L, -1 );
-  lua_remove( L, -1 );
 
   if( EMPTY( str ) )
     {
     Warning( "%s: Cannot call HexStringToNumber with empty string" );
+    lua_remove( L, -1 );
     return 0;
     }
 
   long x;
   if( sscanf( str, "%lx", &x )==1 )
     {
+    lua_remove( L, -1 );
     lua_pushnumber( L, x );
     return 1;
     }
 
   Warning( "Failed to get a number from %s", str );
+  lua_remove( L, -1 );
   return 0;
   }
 
@@ -685,12 +687,12 @@ int LUANotice( lua_State* L )
     }
 
   const char* str = lua_tostring( L, -1 );
-  lua_remove( L, -1 );
   if( str==NULL )
     str = "";
 
   Notice( str );
 
+  lua_remove( L, -1 );
   return 0;
   }
 
@@ -703,12 +705,12 @@ int LUAWarning( lua_State* L )
     }
 
   const char* str = lua_tostring( L, -1 );
-  lua_remove( L, -1 );
   if( str == NULL )
     str = "";
 
   Warning( str );
 
+  lua_remove( L, -1 );
   return 0;
   }
 
@@ -721,12 +723,12 @@ int LUAError( lua_State* L )
     }
 
   const char* str = lua_tostring( L, -1 );
-  lua_remove( L, -1 );
   if( str==NULL )
     str = "";
 
   Error( str );
 
+  lua_remove( L, -1 );
   return 0;
   }
 
