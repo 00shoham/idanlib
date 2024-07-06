@@ -432,9 +432,15 @@ int LUAWebTransaction( lua_State* L )
 #endif
 
   if( d.data==NULL )
+    {
+    /* Notice( "LUA WebTransaction() - empty results" ); */
     (void)lua_pushstring( L, "" );
+    }
   else
+    {
+    /* Notice( "LUA WebTransaction() - results = [%s]", d.data ); */
     (void)lua_pushstring( L, (const char*)d.data );
+    }
 
   /* web transaction logs this same content already...
      Notice( "Pushed string onto lua stack (%s)", NULLPROTECT( d.data ) ); */

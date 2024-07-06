@@ -319,7 +319,6 @@ int PrintSessionCookie( char* cookieVarName,
     return -5;
     }
 
-
   char* userAgentHash = SimpleHash( uagt, USER_AGENT_HASH_LEN );
 
 
