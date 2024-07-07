@@ -750,7 +750,7 @@ void FreeTagValue( _TAG_VALUE* list )
   if( list->value!=NULL )
     {
     if( isPassword )
-      memset( list->value, 0, strlen( list->value ) );
+      memset( list->value, 0, strlen( list->value )-1 );
     FREE( list->value );
     }
   FREE( list );

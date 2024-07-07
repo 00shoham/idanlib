@@ -323,12 +323,13 @@ int PrintSessionCookie( char* cookieVarName,
 
 
   /* QQQ */
-  Notice( "PrintSessionCookie(): user=%s, addr=%s, uah=%s, ttl=%d, key=%s",
+  Notice( "PrintSessionCookie(): cookie=%s, user=%s, addr=%s, uah=%s, ttl=%d, key=%s",
+          NULLPROTECT( cookieVarName ),
           NULLPROTECT( userID ),
           NULLPROTECT( addr ),
           NULLPROTECT( userAgentHash ),
           ttlSeconds,
-          key==NULL || *key==0 ? "nil" : "value" );
+          key==NULL || *key==0 ? "null" : "not-null" );
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
