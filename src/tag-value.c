@@ -738,12 +738,19 @@ void FreeTagValue( _TAG_VALUE* list )
     FreeTagValue( list->next );
     list->next = NULL;
     }
+  int isPassword = 0;
   if( list->tag!=NULL )
     {
+    if( strstr( list->tag, "pass" )!=NULL
+        || strstr( list->tag, "PASS" )!=NULL )
+      isPassword = 1;
+
     FREE( list->tag );
     }
   if( list->value!=NULL )
     {
+    if( isPassword )
+      memset( list->value, 0, strlen( list->value ) );
     FREE( list->value );
     }
   FREE( list );
