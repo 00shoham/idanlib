@@ -423,7 +423,7 @@ int LUAWebTransaction( lua_State* L )
   if( err != CURLE_OK )
     {
     Warning( "%s: CURL says - %s", me, errMsg );
-    FreeData( &d);
+    FreeData( &d );
     FreeTagValue( tv );
     return 0;
     }
