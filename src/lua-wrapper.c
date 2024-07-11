@@ -356,7 +356,13 @@ int LUAWebTransaction( lua_State* L )
 
   int timeoutSeconds = GetTagValueInt( tv, "TIMEOUT_SECONDS" );
   if( timeoutSeconds<=0 )
-    timeoutSeconds = 60;
+    {
+    timeoutSeconds = (int)GetTagValueDouble( tv, "TIMEOUT_SECONDS" );
+    if( timeoutSeconds<=0 )
+      {
+      timeoutSeconds = 60;
+      }
+    }
 
   _TAG_VALUE* httpHeaders = NULL;
   char* userAgent = GetTagValue( tv, "USER_AGENT" );
