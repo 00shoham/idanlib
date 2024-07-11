@@ -414,8 +414,6 @@ int LUAWebTransaction( lua_State* L )
                     &errMsg
                     );
                          
-  Notice( "WebTransaction: return = %d", (int)err );
-
   if( err != CURLE_OK )
     {
     Warning( "%s: CURL says - %s", me, errMsg );
