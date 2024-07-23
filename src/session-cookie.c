@@ -333,7 +333,7 @@ int PrintSessionCookie( char* cookieVarName,
 
   char* cookie = EncodeIdentityInCookie( userID, addr, userAgentHash, ttlSeconds, key );
 
-  printf( "Set-Cookie: %s=%s; Max-Age=%ld\n", cookieVarName, cookie, ttlSeconds);
+  printf( "Set-Cookie: %s=%s; Max-Age=%ld; SameSite=Strict\n", cookieVarName, cookie, ttlSeconds);
 
   /* DEBUG
   Notice( "Set-Cookie: %s=%s; Max-Age=%ld\n", cookieVarName, cookie, ttlSeconds);
