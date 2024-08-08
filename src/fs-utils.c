@@ -223,7 +223,7 @@ int GetOrderedDirectoryEntries2( const char* parentFolder,
   return err;
   }
 
-/* Extract the path name, without the filename, from a full path.
+/* Extract the folder name, without the filename, from a full path.
  * Return NULL on failure conditions.
  * Note that the path argument is not modified.
  */
