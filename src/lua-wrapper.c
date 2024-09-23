@@ -391,6 +391,13 @@ int LUAWebTransaction( lua_State* L )
   if( EMPTY( cookiesFile ) )
     cookiesFile = DEFAULT_COOKIES_FILE;
 
+  /* check that we can write to the cookies file - else we could get errors... */
+  int fd = open( cookiesFile, O_RDWR | O_CREAT, 0666 );
+  if( fd==-1 )
+    Error( "Cannot open/create cookies file [%s] with read/write permissions", cookiesFile );
+  close( fd );
+  fd = 0;
+
   int skipPeerVerify = 0;
   char* skipPeerVerifyString = GetTagValue( tv, "SKIP_PEER_VERIFY" );
   if( ! EMPTY( skipPeerVerifyString ) )
