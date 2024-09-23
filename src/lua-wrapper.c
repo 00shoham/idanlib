@@ -329,6 +329,10 @@ int LUAWebTransaction( lua_State* L )
   char* postData = GetTagValue( tv, "POST_DATA" );
   if( EMPTY( postData ) )
     postData = NULL;
+  else
+    { /* if we are posting anything, the method must be HTTP_POST... */
+    method = HTTP_POST;
+    }
 
   char* postContentType = GetTagValue( tv, "CONTENT_TYPE" );
   if( EMPTY( postContentType ) )
