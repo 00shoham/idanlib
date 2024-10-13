@@ -496,7 +496,7 @@ int CompareTagValueList( _TAG_VALUE* a, _TAG_VALUE* b )
       case VT_STR:
         if( EMPTY( tv->value ) )
           {
-          printf( "%s has empty string\n", NULLPROTECT( tv->tag ) );
+          Warning( "%s has empty string\n", NULLPROTECT( tv->tag ) );
           return -3;
           }
 
