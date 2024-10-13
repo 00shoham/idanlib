@@ -500,6 +500,8 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   return retVal;
   }
 
+/* QQQ refactor to allocate one buffer at a time, use strdup()
+   should probably return lineNo too - how many did we get?? */
 int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int timeoutSeconds, int maxtimeSeconds )
   {
   int fileDesc = -1;

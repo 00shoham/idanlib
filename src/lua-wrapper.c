@@ -666,7 +666,7 @@ int LUAReadLineFromCommand( lua_State* L )
   if( EMPTY( cmd ) )
     {
     FreeTagValue( tv );
-    Warning( "%s: timeout not set", me );
+    Warning( "%s: command not set", me );
     lua_pushstring( L, "" );
     lua_pushnumber( L, -2 );
     return 2;
@@ -687,6 +687,99 @@ int LUAReadLineFromCommand( lua_State* L )
   FreeTagValue( tv );
 
   lua_pushstring( L, buf );
+  lua_pushnumber( L, result );
+
+  return 2;
+  }
+
+int LUAReadOutputFromCommand( lua_State* L )
+  {
+  char* me = "LUAReadOutputFromCommand";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -1 );
+    return 2;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* cmd = GetTagValue( tv, "command" );
+  if( EMPTY( cmd ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: command not set", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -2 );
+    return 2;
+    }
+
+  int timeout = GetTagValueInt( tv, "timeout" );
+  if( timeout<1 )
+    timeout = (int)GetTagValueDouble( tv, "timeout" );
+  if( timeout<5 )
+    {
+    timeout = 5;
+    Notice( "%s: timeout not set - setting to 5 seconds", me );
+    }
+
+  int linetime = GetTagValueInt( tv, "linetime" );
+  if( linetime<1 )
+    linetime = (int)GetTagValueDouble( tv, "linetime" );
+  if( linetime<5 )
+    {
+    linetime = 5;
+    Notice( "%s: linetime not set - setting to 5 seconds", me );
+    }
+
+  int maxlines = GetTagValueInt( tv, "maxlines" );
+  if( maxlines<1 )
+    maxlines = (int)GetTagValueDouble( tv, "maxlines" );
+  if( maxlines<1 )
+    {
+    timeout = 999;
+    Notice( "%s: maxlines not set - setting to 999", me );
+    }
+
+  int linelen = GetTagValueInt( tv, "linelen" );
+  if( linelen<1 )
+    linelen = (int)GetTagValueDouble( tv, "linelen" );
+  if( linelen<1 )
+    {
+    timeout = 160;
+    Notice( "%s: linelen not set - setting to 160", me );
+    }
+
+  char** buffers = (char**)SafeCalloc( maxlines, sizeof(char*), "line buffers" );
+  for( int i=0; i<maxlines; ++i )
+    {
+    char* ptr = (char*)malloc( linelen+1 );
+    if( ptr==NULL )
+      Error( "Failed to allocate buffer %d", i );
+    else
+      buffers[i] = ptr;
+    }
+
+  /* QQQ use new version of this function... */
+  int result = ReadLinesFromCommand( cmd,
+                                     buffers,
+                                     maxlines /*lines*/,
+                                     linelen /*buflen*/,
+                                     linetime /*seconds/line*/,
+                                     timeout /*total time*/ );
+  FreeTagValue( tv );
+
+  /* QQQ finish code that pushes lines of text into an array.  currently,
+     with old version, we don't know how many lines we got...  no bueno.  */
+#if 0
+  for( int i=0; i<maxlines; ++i )
+    {
+    char* ptr = buffers[i];
+    }
+
+  lua_pushstring( L, buf );
+#endif
   lua_pushnumber( L, result );
 
   return 2;
