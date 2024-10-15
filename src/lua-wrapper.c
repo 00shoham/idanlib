@@ -744,13 +744,28 @@ int LUAReadOutputFromCommand( lua_State* L )
 
   char** buffers = NULL;
 
+  Notice( "cmd = %s", cmd );
+  Notice( "maxLineLen = %d", maxLineLen );
+  Notice( "readTimeout = %d", readTimeout );
+  Notice( "maxTimeout = %d", maxTimeout );
+
   int nLines = ReadLinesFromCommandEx( cmd,
                                        &buffers,
                                        maxLineLen,
                                        readTimeout,
                                        maxTimeout );
+
   FreeTagValue( tv );
 
+  _TAG_VALUE* results = NewTagValue( "tag", "value", NULL, 0 );
+  results = NewTagValueInt( "nLines", nLines, results, 0 );
+
+  (void)TagValueTableOnLuaStack( L, results );
+  FreeTagValue( results );
+
+  return 1;
+
+#if 0
   if( nLines>=1 )
     {
     _TAG_VALUE* linesList = NULL;
@@ -772,7 +787,7 @@ int LUAReadOutputFromCommand( lua_State* L )
 
   lua_pushnumber( L, nLines );
 
-  return 1;
+#endif
   }
 
 int LUANotice( lua_State* L )

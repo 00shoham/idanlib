@@ -12,6 +12,7 @@
 #define COOL_AIR_DELTA   5  /* degrees C outside cooler than inside */
 
 #define TESTCMD "/bin/bash /usr/local/bin/get-todays-forecast.sh Calgary"
+#define TESTCMD_2 "/bin/ls /"
 
 #if 0
 /* old style call - preallocate buffers */
@@ -50,32 +51,14 @@ int main()
 int main()
   {
   char **bufs = NULL;
-  int nLines = ReadLinesFromCommandEx( TESTCMD, &bufs, BUFLEN, WEATHER_READ_TIMEOUT, WEATHER_READ_MAX_TIMEOUT );
-  printf( "Tried to run [%s] - got %d lines back (or error)\n", TESTCMD, nLines );
+  int nLines = ReadLinesFromCommandEx( TESTCMD_2, &bufs, BUFLEN, WEATHER_READ_TIMEOUT, WEATHER_READ_MAX_TIMEOUT );
+  Notice( "Tried to run [%s] - got %d lines back (or error)\n", TESTCMD_2, nLines );
 
   if( nLines<=0 )
     Error( "Nothing read back: %d", nLines );
 
-  double highTemp = INVALID_TEMPERATURE;
-  double lowTemp = INVALID_TEMPERATURE;
-  if( nLines>=2
-      && NOTEMPTY( bufs[0] )
-      && sscanf( bufs[0], "High:%lf", &highTemp )==1
-      && NOTEMPTY( bufs[1] )
-      && sscanf( bufs[1], "Low:%lf", &lowTemp )==1
-      && SANE_TEMPERATURE( highTemp )
-      && SANE_TEMPERATURE( lowTemp ) )
-    {
-    Notice( "Forecast is %.1lf low -- %.1lf high", lowTemp, highTemp );
-    }
-  else
-    {
-    Warning( "Failed to read weather forecast -- %d", nLines );
-    if( nLines>=1 )
-      Warning( "Line 0: %s", NULLPROTECT( bufs[0] ) );
-    if( nLines>=2 )
-      Warning( "Line 1: %s", NULLPROTECT( bufs[1] ) );
-    }
+  for( int i=0; i<nLines; ++i )
+    printf( "%04d - [%s]\n", i, bufs[i] );
 
   for( int i=0; i<nLines; ++i )
     FREE( bufs[i] );

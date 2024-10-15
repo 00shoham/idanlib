@@ -25,6 +25,16 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
   int writeFD = -1;
   int pid = -1;
 
+  if( EMPTY( cmd ) )
+    Error( "POpenAndRead(): no command specified" );
+  NARGV* args = nargv_parse( cmd );
+  if( args==NULL )
+    Error( "POpenAndRead():Failed to parse cmd line [%s]", cmd );
+  if( args->argv==NULL || EMPTY( args->argv[0] ) )
+    Error( "POpenAndRead(): Command [%s] does not parse", cmd );
+  if( FileExists( args->argv[0] )!=0 )
+    Error( "POpenAndRead(): Command [%s] does not exist", args->argv[0] );
+
   /* Create a pipe to talk to the child */
   int err = pipe( fd );
   if( err<0 )
@@ -42,9 +52,6 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     prctl( PR_SET_PDEATHSIG, SIGHUP );
-    NARGV* args = nargv_parse( cmd );
-    if( args==NULL )
-      Error( "Failed to parse cmd line [%s]", cmd );
     close( readFD );
     dup2( writeFD, 1 );
     dup2( writeFD, 2 );
@@ -377,7 +384,7 @@ int AsyncReadFromChildProcess( char* cmd,
     if( WIFEXITED( wstatus ) )
       {
       exited = 1;
-      Notice( "child exited.");
+      Notice( "child %d exited.", (int)child );
       retVal = 0;
       break;
       }
@@ -481,7 +488,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child exited.");
+      Notice( "child %d exited.", (int)child );
       retVal = 0;
       break;
       }
@@ -542,22 +549,29 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     }
 
   int nBuffersAllocated = DEFAULT_READLINE_NUM_BUFFERS;
-  char** bufs = NULL;
-  bufs = (char**)SafeCalloc( nBuffersAllocated, sizeof( char* ), "pointers to line buffers" );
+  char** bufs = (char**)SafeCalloc( nBuffersAllocated, sizeof( char* ), "ReadLinesFromCommandEx(): pointers to line buffers" );
 
-  char* singleBuffer = (char*)SafeCalloc( maxLineLen, sizeof(char), "single line buffer" );
+  char* singleBuffer = (char*)SafeCalloc( maxLineLen, sizeof(char), "ReadLinesFromCommandEx(): single line buffer" );
+
+  /*
+  Notice( "Allocated %d buffers (%p) and a single %d buffer (%p)",
+          nBuffersAllocated, bufs, maxLineLen, singleBuffer );
+  */
 
   int err = POpenAndRead( cmd, &fileDesc, &child );
-  if( err )
+  if( err || fileDesc<=0 || child==-1 )
     {
     Warning( "Cannot popen child to run [%s] - %d - %d - %s",
              cmd, err, errno, strerror( errno ) );
     return -102;
     }
 
+  Notice( "POpenAndRead( %s ) returned %d; fileDesc = %d; child = %d", cmd, err, fileDesc, (int)child );
+
   int lineNo = 0;
   int nCharsRead = 0;
   char* ptr = singleBuffer;
+  *ptr = 0;
   char* endPtr = ptr + maxLineLen - 2;
 
   int retVal = 0;
@@ -565,7 +579,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
 
   int exited = 0;
 
-  while( fileDesc > 0 )
+  for( int j=0; j<5; ++j )
     {
     int tElapsed = (int)(time(NULL) - tStart);
     if( tElapsed >= maxTimeoutSeconds )
@@ -574,6 +588,8 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
       retVal = -3;
       break;
       }
+
+    /* Notice( "tElapsed = %d", tElapsed ); */
 
     fd_set readSet;
     fd_set exceptionSet;
@@ -586,7 +602,12 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     timeout.tv_sec = timeoutPerReadSeconds;
     timeout.tv_usec = 0;
     
+    /* Notice( "pre-select()" ); */
+
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+
+    /* Notice( "select() returned %d", result ); */
+
     if( result>0 )
       {
       char tinyBuf[2];
@@ -595,22 +616,27 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
       while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
         {
         int c = tinyBuf[0];
+        /* Notice( "read [%c]", c ); */
         if( c=='\n' )
           {
           bufs[lineNo] = strdup( singleBuffer );
+          ptr = singleBuffer;
+          *ptr = 0;
+          endPtr = ptr + maxLineLen - 2;
+
+          /* Notice( "Completed reading line %d", lineNo ); */
+
           ++lineNo;
           if( lineNo >= nBuffersAllocated )
             {
-            bufs = (char**)realloc( bufs, (nBuffersAllocated + DEFAULT_READLINE_NUM_BUFFERS) * sizeof(char*));
+            nBuffersAllocated += DEFAULT_READLINE_NUM_BUFFERS;
+            bufs = (char**)realloc( bufs, nBuffersAllocated * sizeof(char*) );
             if( bufs==NULL )
               {
               Warning( "ReadLinesFromCommandEx(): failed to allocate array of strings" );
               return -103;
               }
-            nBuffersAllocated += DEFAULT_READLINE_NUM_BUFFERS;
             }
-          ptr = singleBuffer;
-          endPtr = ptr + maxLineLen - 2;
           }
         else
           {
@@ -632,25 +658,32 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child exited.");
+      Notice( "child %d exited.", (int)child );
       retVal = 0;
       break;
       }
+
+    /* Notice( "Loop around.." ); */
     }
 
   if( fileDesc>0 )
     {
     close( fileDesc );
+    fileDesc = -1;
     }
 
   if( exited==0 )
     {
+    /* Notice( "Did not exit?  Kill child." ); */
     kill( child, SIGHUP );
     }
 
   *bufsPtr = bufs;
   if( retVal==0 )
+    {
+    /* Notice( "retVal == 0 - so returning lineNo (%d)", lineNo ); */
     retVal = lineNo;
+    }
 
   return retVal;
   }
@@ -735,7 +768,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child exited.");
+      Notice( "child %d exited.", (int)child );
       retVal = 0;
       break;
       }
@@ -824,7 +857,7 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child exited.");
+      Notice( "child %d exited.", (int)child );
       retVal = 0;
       break;
       }
@@ -897,7 +930,7 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.");
+    Notice( "child %d exited.", (int)child );
     retVal = 0;
     }
 
@@ -945,11 +978,11 @@ int SyncRunCommandNoIO( char* cmd )
   if( args==NULL )
     Error( "Failed to parse cmd line [%s]", cmd );
 
-  pid_t pid = fork();
-  if( pid<0 )
+  pid_t child = fork();
+  if( child<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
-  if( pid == 0 ) /* child */
+  if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     prctl( PR_SET_PDEATHSIG, SIGHUP );
@@ -966,7 +999,7 @@ int SyncRunCommandNoIO( char* cmd )
 
   int retVal = 0;
   int wStatus = 0;
-  if( waitpid( pid, &wStatus, 0 )==-1 )
+  if( waitpid( child, &wStatus, 0 )==-1 )
     {
     Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
     retVal = -1;
@@ -974,7 +1007,7 @@ int SyncRunCommandNoIO( char* cmd )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.\n");
+    Notice( "child %d exited.", (int)child );
     }
 
   return retVal;
@@ -1000,11 +1033,11 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
   readFD = fd[0];
   writeFD = fd[1];
 
-  pid_t pid = fork();
-  if( pid<0 )
+  pid_t child = fork();
+  if( child<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
-  if( pid == 0 ) /* child */
+  if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     prctl( PR_SET_PDEATHSIG, SIGHUP );
@@ -1050,7 +1083,7 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
 
   int retVal = 0;
   int wStatus;
-  if( waitpid( pid, &wStatus, 0 )==-1 )
+  if( waitpid( child, &wStatus, 0 )==-1 )
     {
     Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
     retVal = -1;
@@ -1058,7 +1091,7 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
 
   if( WIFEXITED( wStatus ) )
     {
-    /* Notice( "child exited.\n"); */
+    /* Notice( "child %d exited.\n", (int)child ); */
     }
 
   return retVal;
@@ -1084,11 +1117,11 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
   readFD = fd[0];
   writeFD = fd[1];
 
-  pid_t pid = fork();
-  if( pid<0 )
+  pid_t child = fork();
+  if( child<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
-  if( pid == 0 ) /* child */
+  if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     prctl( PR_SET_PDEATHSIG, SIGHUP );
@@ -1150,7 +1183,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
 
   int retVal = 0;
   int wStatus;
-  if( waitpid( pid, &wStatus, 0 )==-1 )
+  if( waitpid( child, &wStatus, 0 )==-1 )
     {
     Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
     retVal = -1;
@@ -1158,7 +1191,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
 
   if( WIFEXITED( wStatus ) )
     {
-    /* Notice( "child exited.\n"); */
+    /* Notice( "child %d exited.\n", (int)child ); */
     }
 
   return retVal;
@@ -1175,11 +1208,11 @@ int ASyncRunShellNoIO( char* cmd )
   if( oldp!=oldpath )
     Error( "Failed to get old path" );
 
-  pid_t pid = LaunchDaemon( 1 );
-  if( pid<0 )
+  pid_t child = LaunchDaemon( 1 );
+  if( child<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
-  if( pid == 0 ) /* child */
+  if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     Notice( "Forked.  About to exec [%s] in a shell", cmd );
@@ -1227,11 +1260,11 @@ int SyncRunShellNoIO( char* cmd )
   if( EMPTY( cmd ) )
     return -1;
 
-  pid_t pid = fork();
-  if( pid<0 )
+  pid_t child = fork();
+  if( child<0 )
     Error( "Failed to fork() - %d:%s", errno, strerror( errno ) );
 
-  if( pid == 0 ) /* child */
+  if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
     prctl( PR_SET_PDEATHSIG, SIGHUP );
@@ -1248,7 +1281,7 @@ int SyncRunShellNoIO( char* cmd )
 
   int retVal = 0;
   int wStatus;
-  if( waitpid( pid, &wStatus, 0 )==-1 )
+  if( waitpid( child, &wStatus, 0 )==-1 )
     {
     Warning( "waitpid returned -1 (error.  errno=%d/%s).\n", errno, strerror( errno ));
     retVal = -1;
@@ -1256,7 +1289,7 @@ int SyncRunShellNoIO( char* cmd )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.\n");
+    Notice( "child %d exited.\n", (int)child );
     }
 
   return retVal;
@@ -1461,7 +1494,7 @@ int SendEMail( char* recipient, char* subject, char* body )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child exited.");
+    Notice( "child %d exited.", (int)child);
     retVal = 0;
     }
 
