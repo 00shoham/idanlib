@@ -878,6 +878,9 @@ lua_State* LUAInit()
   lua_pushcfunction( L, LUAReadLineFromCommand );
   lua_setglobal( L, "ReadLineFromCommand" );
 
+  lua_pushcfunction( L, LUAReadOutputFromCommand );
+  lua_setglobal( L, "ReadOutputFromCommand" );
+
   // load the libs
   luaL_openlibs(L);
 
