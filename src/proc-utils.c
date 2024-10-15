@@ -500,8 +500,161 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   return retVal;
   }
 
-/* QQQ refactor to allocate one buffer at a time, use strdup()
-   should probably return lineNo too - how many did we get?? */
+int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int timeoutPerReadSeconds, int maxTimeoutSeconds )
+  {
+  int fileDesc = -1;
+  pid_t child = -1;
+
+  if( EMPTY( cmd ) )
+    {
+    Warning( "ReadLinesFromCommandEx(): no command specified" );
+    return -100;
+    }
+
+  if( bufsPtr==NULL )
+    {
+    Warning( "ReadLinesFromCommandEx(): no pointer provided to array of strings" );
+    return -101;
+    }
+
+  if( maxLineLen<=0 )
+    {
+    Warning( "ReadLinesFromCommandEx(): maxLineLen not specified.  Using default." );
+    maxLineLen = DEFAULT_READLINE_LINE_LEN;
+    }
+
+  if( timeoutPerReadSeconds<=0 )
+    {
+    Warning( "ReadLinesFromCommandEx(): timeoutPerReadSecond snot specified.  Using default." );
+    timeoutPerReadSeconds = DEFAULT_READLINE_TIMEOUT_PER_READ;
+    }
+
+  if( maxTimeoutSeconds<=0 )
+    {
+    Warning( "ReadLinesFromCommandEx(): timeoutPerReadSecond snot specified.  Using default." );
+    maxTimeoutSeconds = DEFAULT_READLINE_TIMEOUT_TOTAL;
+    }
+
+  if( maxTimeoutSeconds<timeoutPerReadSeconds )
+    {
+    Warning( "ReadLinesFromCommandEx(): maxTimeoutSeconds<timeoutPerReadSeconds.  Adjusting." );
+    maxTimeoutSeconds = timeoutPerReadSeconds * 2;
+    }
+
+  int nBuffersAllocated = DEFAULT_READLINE_NUM_BUFFERS;
+  char** bufs = NULL;
+  bufs = (char**)SafeCalloc( nBuffersAllocated, sizeof( char* ), "pointers to line buffers" );
+
+  char* singleBuffer = (char*)SafeCalloc( maxLineLen, sizeof(char), "single line buffer" );
+
+  int err = POpenAndRead( cmd, &fileDesc, &child );
+  if( err )
+    {
+    Warning( "Cannot popen child to run [%s] - %d - %d - %s",
+             cmd, err, errno, strerror( errno ) );
+    return -102;
+    }
+
+  int lineNo = 0;
+  int nCharsRead = 0;
+  char* ptr = singleBuffer;
+  char* endPtr = ptr + maxLineLen - 2;
+
+  int retVal = 0;
+  time_t tStart = time(NULL);
+
+  int exited = 0;
+
+  while( fileDesc > 0 )
+    {
+    int tElapsed = (int)(time(NULL) - tStart);
+    if( tElapsed >= maxTimeoutSeconds )
+      {
+      Warning( "ReadLinesFromCommandEx(): reached timeout (%d seconds) after reading %d characters", tElapsed, nCharsRead );
+      retVal = -3;
+      break;
+      }
+
+    fd_set readSet;
+    fd_set exceptionSet;
+    struct timeval timeout;
+
+    FD_ZERO( &readSet );
+    FD_SET( fileDesc, &readSet );
+    FD_ZERO( &exceptionSet );
+    FD_SET( fileDesc, &exceptionSet );
+    timeout.tv_sec = timeoutPerReadSeconds;
+    timeout.tv_usec = 0;
+    
+    int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+    if( result>0 )
+      {
+      char tinyBuf[2];
+      tinyBuf[0] = 0;
+      int n = 0;
+      while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
+        {
+        int c = tinyBuf[0];
+        if( c=='\n' )
+          {
+          bufs[lineNo] = strdup( singleBuffer );
+          ++lineNo;
+          if( lineNo >= nBuffersAllocated )
+            {
+            bufs = (char**)realloc( bufs, (nBuffersAllocated + DEFAULT_READLINE_NUM_BUFFERS) * sizeof(char*));
+            if( bufs==NULL )
+              {
+              Warning( "ReadLinesFromCommandEx(): failed to allocate array of strings" );
+              return -103;
+              }
+            nBuffersAllocated += DEFAULT_READLINE_NUM_BUFFERS;
+            }
+          ptr = singleBuffer;
+          endPtr = ptr + maxLineLen - 2;
+          }
+        else
+          {
+          *ptr = c;
+          ++ptr;
+          *ptr = 0;
+          }
+        }
+      }
+
+    int wStatus;
+    if( waitpid( child, &wStatus, WNOHANG )==-1 )
+      {
+      Notice( "waitpid returned -1 (error.  errno=%d/%s).", errno, strerror( errno ));
+      retVal = -1;
+      break;
+      }
+
+    if( WIFEXITED( wStatus ) )
+      {
+      exited = 1;
+      Notice( "child exited.");
+      retVal = 0;
+      break;
+      }
+    }
+
+  if( fileDesc>0 )
+    {
+    close( fileDesc );
+    }
+
+  if( exited==0 )
+    {
+    kill( child, SIGHUP );
+    }
+
+  *bufsPtr = bufs;
+  if( retVal==0 )
+    retVal = lineNo;
+
+  return retVal;
+  }
+
 int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int timeoutSeconds, int maxtimeSeconds )
   {
   int fileDesc = -1;
