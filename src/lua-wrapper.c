@@ -757,21 +757,15 @@ int LUAReadOutputFromCommand( lua_State* L )
 
   FreeTagValue( tv );
 
-  _TAG_VALUE* results = NewTagValue( "tag", "value", NULL, 0 );
-  results = NewTagValueInt( "nLines", nLines, results, 0 );
-
-  (void)TagValueTableOnLuaStack( L, results );
-  FreeTagValue( results );
-
-  return 1;
-
-#if 0
   if( nLines>=1 )
     {
     _TAG_VALUE* linesList = NULL;
     for( int i=0; i<nLines; ++i )
       {
-      linesList = AppendValue( buffers[i], linesList );
+      char numTag[20];
+      snprintf( numTag, sizeof(numTag)-2, "%07d", i );
+      _TAG_VALUE* singleLine = NewTagValue( numTag, buffers[i], NULL, 0 );
+      linesList = AppendTagValue( linesList, singleLine );
       if( buffers[i]!=NULL )
         free( buffers[i] );
       }
@@ -787,7 +781,7 @@ int LUAReadOutputFromCommand( lua_State* L )
 
   lua_pushnumber( L, nLines );
 
-#endif
+  return 2;
   }
 
 int LUANotice( lua_State* L )
