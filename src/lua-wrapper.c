@@ -673,7 +673,7 @@ int LUAReadLineFromCommand( lua_State* L )
   if( EMPTY( cmd ) )
     {
     FreeTagValue( tv );
-    Warning( "%s: timeout not set", me );
+    Warning( "%s: command not set", me );
     lua_pushstring( L, "" );
     lua_pushnumber( L, -2 );
     return 2;
@@ -695,6 +695,98 @@ int LUAReadLineFromCommand( lua_State* L )
 
   lua_pushstring( L, buf );
   lua_pushnumber( L, result );
+
+  return 2;
+  }
+
+int LUAReadOutputFromCommand( lua_State* L )
+  {
+  char* me = "LUAReadOutputFromCommand";
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "%s: Top of LUA stack is not a table", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -1 );
+    return 2;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+
+  char* cmd = GetTagValue( tv, "command" );
+  if( EMPTY( cmd ) )
+    {
+    FreeTagValue( tv );
+    Warning( "%s: command not set", me );
+    lua_pushstring( L, "" );
+    lua_pushnumber( L, -2 );
+    return 2;
+    }
+
+  int maxLineLen = GetTagValueInt( tv, "max_line_len" );
+  if( maxLineLen<1 )
+    maxLineLen = (int)GetTagValueDouble( tv, "max_line_len" );
+  if( maxLineLen<500 )
+    {
+    maxLineLen = 500;
+    Notice( "%s: max_line_len not set - setting to 500 chars", me );
+    }
+
+  int readTimeout = GetTagValueInt( tv, "read_timeout" );
+  if( readTimeout<1 )
+    readTimeout = (int)GetTagValueDouble( tv, "read_timeout" );
+  if( readTimeout<5 )
+    {
+    readTimeout = 5;
+    Notice( "%s: read_timeout not set - setting to 5 seconds", me );
+    }
+
+  int maxTimeout = GetTagValueInt( tv, "max_timeout" );
+  if( maxTimeout<1 )
+    maxTimeout = (int)GetTagValueDouble( tv, "max_timeout" );
+  if( maxTimeout<15 )
+    {
+    maxTimeout = 15;
+    Notice( "%s: max_timeout not set - setting to 15 seconds", me );
+    }
+
+  char** buffers = NULL;
+
+  Notice( "cmd = %s", cmd );
+  Notice( "maxLineLen = %d", maxLineLen );
+  Notice( "readTimeout = %d", readTimeout );
+  Notice( "maxTimeout = %d", maxTimeout );
+
+  int nLines = ReadLinesFromCommandEx( cmd,
+                                       &buffers,
+                                       maxLineLen,
+                                       readTimeout,
+                                       maxTimeout );
+
+  FreeTagValue( tv );
+
+  if( nLines>=1 )
+    {
+    _TAG_VALUE* linesList = NULL;
+    for( int i=0; i<nLines; ++i )
+      {
+      char numTag[20];
+      snprintf( numTag, sizeof(numTag)-2, "%07d", i );
+      _TAG_VALUE* singleLine = NewTagValue( numTag, buffers[i], NULL, 0 );
+      linesList = AppendTagValue( linesList, singleLine );
+      if( buffers[i]!=NULL )
+        free( buffers[i] );
+      }
+    free( buffers );
+    buffers = NULL;
+    (void)TagValueTableOnLuaStack( L, linesList );
+    FreeTagValue( linesList );
+    }
+  else
+    { /* push an empty table if we read nothing */
+    TagValueTableOnLuaStack( L, NULL );
+    }
+
+  lua_pushnumber( L, nLines );
 
   return 2;
   }
@@ -801,6 +893,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, LUAReadLineFromCommand );
   lua_setglobal( L, "ReadLineFromCommand" );
+
+  lua_pushcfunction( L, LUAReadOutputFromCommand );
+  lua_setglobal( L, "ReadOutputFromCommand" );
 
   // load the libs
   luaL_openlibs(L);

@@ -12,6 +12,10 @@
 #define COOL_AIR_DELTA   5  /* degrees C outside cooler than inside */
 
 #define TESTCMD "/bin/bash /usr/local/bin/get-todays-forecast.sh Calgary"
+#define TESTCMD_2 "/bin/ls /"
+
+#if 0
+/* old style call - preallocate buffers */
 int main()
   {
   char **bufs = NULL;
@@ -38,6 +42,26 @@ int main()
 
   FREE( bufs[1] );
   FREE( bufs[0] );
+  FREE( bufs );
+
+  return 0;
+  }
+#endif
+
+int main()
+  {
+  char **bufs = NULL;
+  int nLines = ReadLinesFromCommandEx( TESTCMD_2, &bufs, BUFLEN, WEATHER_READ_TIMEOUT, WEATHER_READ_MAX_TIMEOUT );
+  Notice( "Tried to run [%s] - got %d lines back (or error)\n", TESTCMD_2, nLines );
+
+  if( nLines<=0 )
+    Error( "Nothing read back: %d", nLines );
+
+  for( int i=0; i<nLines; ++i )
+    printf( "%04d - [%s]\n", i, bufs[i] );
+
+  for( int i=0; i<nLines; ++i )
+    FREE( bufs[i] );
   FREE( bufs );
 
   return 0;
