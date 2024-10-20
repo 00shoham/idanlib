@@ -96,7 +96,7 @@ int TagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
     if( EMPTY( t->tag ) )
       {
       char buf[100];
-      snprintf( buf, sizeof(buf)-1, "no-tag-index-%d", index );
+      snprintf( buf, sizeof(buf)-1, "no-tag-index-%07d", index );
       lua_pushstring( L, buf );
       }
     else
@@ -127,6 +127,50 @@ int TagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
 
       case VT_LIST:
         TagValueTableOnLuaStack( L, t->subHeaders );
+        break;
+
+      default:
+        Warning( "Invalid item type in TAG_VALUE list" );
+      }
+
+    /* table = -3, key = -2, value = -1 */
+    lua_settable(L, -3);
+    }
+
+  return 1;
+  }
+
+int NumericTagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
+  {
+  lua_newtable( L );
+  int index = 1;
+  for( _TAG_VALUE* t = list; t!=NULL; t=t->next, ++index )
+    {
+    lua_pushnumber( L, index );
+
+    switch( t->type )
+      {
+      case VT_STR:
+        if( t->value==NULL )
+          lua_pushstring( L, "" );
+        else
+          lua_pushstring( L, t->value );
+        break;
+
+      case VT_INT:
+        lua_pushnumber( L, (double)t->iValue );
+        break;
+
+      case VT_DOUBLE:
+        lua_pushnumber( L, t->dValue );
+        break;
+
+      case VT_NULL:
+        lua_pushnil( L );
+        break;
+
+      case VT_LIST:
+        NumericTagValueTableOnLuaStack( L, t->subHeaders );
         break;
 
       default:
@@ -771,12 +815,13 @@ int LUAReadOutputFromCommand( lua_State* L )
       }
     free( buffers );
     buffers = NULL;
-    (void)TagValueTableOnLuaStack( L, linesList );
+    (void)NumericTagValueTableOnLuaStack( L, linesList );
     FreeTagValue( linesList );
     }
   else
     { /* push an empty table if we read nothing */
-    TagValueTableOnLuaStack( L, NULL );
+    /* TagValueTableOnLuaStack( L, NULL ); */
+    NumericTagValueTableOnLuaStack( L, NULL );
     }
 
   lua_pushnumber( L, nLines );
