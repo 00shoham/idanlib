@@ -22,23 +22,33 @@ int LuaPrintTable( lua_State* L )
   lua_pushnil( L );  /* first key */
   printf( "{ " );
   int first = 1;
-  while( lua_next(L, -2 ) != 0 )
+  while( L!=NULL && lua_next(L, -2 ) != 0 )
     {
     if( first )
       {}
     else
       printf( ", " );
+
     if( lua_isstring( L, -1 ) )
-      printf( "%s = %s", lua_tostring( L, -2 ), lua_tostring( L, -1 ) );
-    else if( lua_isnumber( L, -1) )
-      printf( "%s = %lf", lua_tostring( L, -2 ), lua_tonumber( L, -1 ) );
-    else if( lua_isboolean( L, -1) )
-      printf( "%s = %s", lua_tostring( L, -2 ), lua_toboolean( L, -1 ) ? "true":"false" );
-    else if( lua_istable( L, -1 ) )
       {
-      printf( "%s = ", lua_tostring( L, -2 ) );
+      printf( "%s = %s", NULLPROTECT( lua_tostring( L, -2 ) ), NULLPROTECT( lua_tostring( L, -1 ) ) );
+      }
+    else if( lua_isnumber( L, -1) )
+      {
+      printf( "%s = %lf", NULLPROTECT( lua_tostring( L, -2 ) ), lua_tonumber( L, -1 ) );
+      }
+    else if( lua_isboolean( L, -1) )
+      {
+      printf( "%s = %s", NULLPROTECT( lua_tostring( L, -2 ) ), lua_toboolean( L, -1 ) ? "true":"false" );
+      }
+    else if( lua_istable( L, -1 ) && ! lua_isnil( L, -1 ) )
+      {
+      printf( "%s = ", NULLPROTECT( lua_tostring( L, -2 ) ) );
       (void)LuaPrintTable( L );
       }
+    else
+      printf( "%s = ?nil?", NULLPROTECT( lua_tostring( L, -2 ) ) );
+
     lua_remove( L, -1 );
     first = 0;
     }
@@ -186,9 +196,16 @@ int NumericTagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
 
 _TAG_VALUE* LuaTableToTagValue( lua_State *L )
   {
+  printf( "LuaTableToTagValue()\n" ); fflush( stdout );
   if( ! lua_istable(L, -1) )
     {
     Warning( "Top of LUA stack is not a table (gettop=%d)", lua_gettop(L) );
+    return NULL;
+    }
+
+  if( lua_isnil(L, -1) )
+    {
+    Warning( "Top of LUA stack is nil (gettop=%d)", lua_gettop(L) );
     return NULL;
     }
 
