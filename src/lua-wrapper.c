@@ -19,35 +19,38 @@ const char* LuaTypeName( int type )
 
 int LuaPrintTable( lua_State* L )
   {
+  if( ! lua_istable( L, -1 ) )
+    Error( "PrintTable() requires a table at the top of the stack." );
+
   lua_pushnil( L );  /* first key */
   printf( "{ " );
   int first = 1;
   while( L!=NULL && lua_next(L, -2 ) != 0 )
     {
-    if( first )
-      {}
-    else
+    if( ! first )
       printf( ", " );
 
     if( lua_isstring( L, -1 ) )
       {
-      printf( "%s = %s", NULLPROTECT( lua_tostring( L, -2 ) ), NULLPROTECT( lua_tostring( L, -1 ) ) );
+      printf( "\"%s\" = \"%s\"", NULLPROTECT( lua_tostring( L, -2 ) ), NULLPROTECT( lua_tostring( L, -1 ) ) );
       }
     else if( lua_isnumber( L, -1) )
       {
-      printf( "%s = %lf", NULLPROTECT( lua_tostring( L, -2 ) ), lua_tonumber( L, -1 ) );
+      printf( "\"%s\" = %lf", NULLPROTECT( lua_tostring( L, -2 ) ), lua_tonumber( L, -1 ) );
       }
     else if( lua_isboolean( L, -1) )
       {
-      printf( "%s = %s", NULLPROTECT( lua_tostring( L, -2 ) ), lua_toboolean( L, -1 ) ? "true":"false" );
+      printf( "\"%s\" = %s", NULLPROTECT( lua_tostring( L, -2 ) ), lua_toboolean( L, -1 ) ? "true":"false" );
       }
-    else if( lua_istable( L, -1 ) && ! lua_isnil( L, -1 ) )
+    else if( lua_istable( L, -1 ) )
       {
-      printf( "%s = ", NULLPROTECT( lua_tostring( L, -2 ) ) );
+      printf( "\"%s\" = ", NULLPROTECT( lua_tostring( L, -2 ) ) );
       (void)LuaPrintTable( L );
       }
+    else if( lua_isnil( L, -1 ) )
+      printf( "\"%s\" = nil", NULLPROTECT( lua_tostring( L, -2 ) ) );
     else
-      printf( "%s = ?nil?", NULLPROTECT( lua_tostring( L, -2 ) ) );
+      printf( "\"%s\" = \"???\"", NULLPROTECT( lua_tostring( L, -2 ) ) );
 
     lua_remove( L, -1 );
     first = 0;
@@ -196,7 +199,6 @@ int NumericTagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list )
 
 _TAG_VALUE* LuaTableToTagValue( lua_State *L )
   {
-  printf( "LuaTableToTagValue()\n" ); fflush( stdout );
   if( ! lua_istable(L, -1) )
     {
     Warning( "Top of LUA stack is not a table (gettop=%d)", lua_gettop(L) );
@@ -789,7 +791,7 @@ int LUAReadOutputFromCommand( lua_State* L )
   if( maxLineLen<500 )
     {
     maxLineLen = 500;
-    Notice( "%s: max_line_len not set - setting to 500 chars", me );
+    /* Notice( "%s: max_line_len not set - setting to 500 chars", me ); */
     }
 
   int readTimeout = GetTagValueInt( tv, "read_timeout" );
@@ -798,7 +800,7 @@ int LUAReadOutputFromCommand( lua_State* L )
   if( readTimeout<5 )
     {
     readTimeout = 5;
-    Notice( "%s: read_timeout not set - setting to 5 seconds", me );
+    /* Notice( "%s: read_timeout not set - setting to 5 seconds", me ); */
     }
 
   int maxTimeout = GetTagValueInt( tv, "max_timeout" );
@@ -807,15 +809,17 @@ int LUAReadOutputFromCommand( lua_State* L )
   if( maxTimeout<15 )
     {
     maxTimeout = 15;
-    Notice( "%s: max_timeout not set - setting to 15 seconds", me );
+    /* Notice( "%s: max_timeout not set - setting to 15 seconds", me ); */
     }
 
   char** buffers = NULL;
 
+  /*
   Notice( "cmd = %s", cmd );
   Notice( "maxLineLen = %d", maxLineLen );
   Notice( "readTimeout = %d", readTimeout );
   Notice( "maxTimeout = %d", maxTimeout );
+  */
 
   int nLines = ReadLinesFromCommandEx( cmd,
                                        &buffers,

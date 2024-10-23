@@ -284,6 +284,8 @@ CURLcode WebTransaction( char* url,
 
   curl_easy_setopt( curl, CURLOPT_ERRORBUFFER, errorBuffer );
 
+  curl_easy_setopt(curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+
   curl_easy_setopt( curl, CURLOPT_URL, url );
 
   struct curl_slist *hs=NULL;
@@ -326,15 +328,16 @@ CURLcode WebTransaction( char* url,
         {
         whatToPost = curl_easy_escape( curl, postData, postDataBinarySize );
         }
+
       curl_easy_setopt( curl, CURLOPT_POSTFIELDS, whatToPost );
       /* curl_easy_setopt( curl, CURLOPT_POSTFIELDSIZE, (longL );
        * - if postData not 0-terminated
        */
       }
-    else
-      {
-      curl_easy_setopt( curl, CURLOPT_POST, 0 );
-      }
+    }
+  else
+    {
+    curl_easy_setopt( curl, CURLOPT_POST, 0 );
     }
 
   if( NOTEMPTY( urlUsername ) && NOTEMPTY( urlPassword ) )

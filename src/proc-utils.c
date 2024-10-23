@@ -384,7 +384,7 @@ int AsyncReadFromChildProcess( char* cmd,
     if( WIFEXITED( wstatus ) )
       {
       exited = 1;
-      Notice( "child %d exited.", (int)child );
+      /* Notice( "child %d exited.", (int)child ); */
       retVal = 0;
       break;
       }
@@ -427,7 +427,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   int err = POpenAndRead( cmd, &fileDesc, &child );
   if( err ) Error( "Cannot popen child to run [%s].", cmd );
 
-  Notice( "ReadLineFromCommand(%s) - fileDesc=%d", cmd, fileDesc );
+  /* Notice( "ReadLineFromCommand(%s) - fileDesc=%d", cmd, fileDesc ); */
 
   char* ptr = buf;
   char* endPtr = buf + bufSize - 2;
@@ -440,7 +440,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
-      Notice( "ReadLineFromCommand(%s) - timeout", cmd );
+      /* Notice( "ReadLineFromCommand(%s) - timeout", cmd ); */
       retVal = -3;
       break;
       }
@@ -456,26 +456,24 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
     
-    Notice( "ReadLineFromCommand(%s) - calling select()", cmd );
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
-    Notice( "ReadLineFromCommand(%s) - select() returned %d", cmd, result );
     if( result>0 )
       {
       int nBytes = read( fileDesc, ptr, endPtr-ptr );
-      Notice( "ReadLineFromCommand(%s) - read %d bytes", cmd, nBytes );
+      /* Notice( "ReadLineFromCommand(%s) - read %d bytes", cmd, nBytes ); */
       if( nBytes>0 )
         {
         ptr += nBytes;
         *ptr = 0;
         if( strchr( buf, '\n' )!=NULL )
           {
-          Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd );
+          /* Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd ); */
           break;
           }
         }
       }
 
-    Notice( "ReadLineFromCommand(%s) - waitpid()", cmd );
+    /* Notice( "ReadLineFromCommand(%s) - waitpid()", cmd ); */
     int wStatus;
     if( waitpid( child, &wStatus, WNOHANG )==-1 )
       {
@@ -484,26 +482,25 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       break;
       }
 
-    Notice( "ReadLineFromCommand(%s) - WIFEXITED( %d )", cmd, wStatus );
+    /* Notice( "ReadLineFromCommand(%s) - WIFEXITED( %d )", cmd, wStatus ); */
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child %d exited.", (int)child );
+      /* Notice( "child %d exited.", (int)child ); */
       retVal = 0;
       break;
       }
     }
 
-  Notice( "ReadLineFromCommand(%s) - closing", cmd );
   close( fileDesc );
 
   if( ! exited )
     {
-    Notice( "ReadLineFromCommand(%s) - child did not exit - kill it", cmd );
+    /* Notice( "ReadLineFromCommand(%s) - child did not exit - kill it", cmd ); */
     kill( child, SIGHUP );
     }
 
-  Notice( "ReadLineFromCommand(%s) - returning %d", cmd, retVal );
+  /* Notice( "ReadLineFromCommand(%s) - returning %d", cmd, retVal ); */
   return retVal;
   }
 
@@ -566,7 +563,9 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     return -102;
     }
 
+  /*
   Notice( "POpenAndRead( %s ) returned %d; fileDesc = %d; child = %d", cmd, err, fileDesc, (int)child );
+  */
 
   int lineNo = 0;
   int nCharsRead = 0;
@@ -658,7 +657,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child %d exited.", (int)child );
+      /* Notice( "child %d exited.", (int)child ); */
       retVal = 0;
       break;
       }
@@ -768,7 +767,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child %d exited.", (int)child );
+      /* Notice( "child %d exited.", (int)child ); */
       retVal = 0;
       break;
       }
@@ -857,7 +856,7 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      Notice( "child %d exited.", (int)child );
+      /* Notice( "child %d exited.", (int)child ); */
       retVal = 0;
       break;
       }
@@ -930,7 +929,7 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child %d exited.", (int)child );
+    /* Notice( "child %d exited.", (int)child ); */
     retVal = 0;
     }
 
@@ -1007,7 +1006,7 @@ int SyncRunCommandNoIO( char* cmd )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child %d exited.", (int)child );
+    /* Notice( "child %d exited.", (int)child ); */
     }
 
   return retVal;
@@ -1215,7 +1214,7 @@ int ASyncRunShellNoIO( char* cmd )
   if( child == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
-    Notice( "Forked.  About to exec [%s] in a shell", cmd );
+    /* Notice( "Forked.  About to exec [%s] in a shell", cmd ); */
 
     if( chdir( oldp ) )
       Error( "Failed to return to path %s", oldp );
@@ -1271,7 +1270,7 @@ int SyncRunShellNoIO( char* cmd )
     close( 0 );
     close( 1 );
     close( 2 );
-    Notice( "Forked.  About to exec [%s] in a shell", cmd );
+    /* Notice( "Forked.  About to exec [%s] in a shell", cmd ); */
     execl( "/bin/sh", "sh", "-c", cmd, (char*)NULL );
     /* should not reach this - so it's an error */
     Error( "Failed to run /bin/sh sh -c \"%s\" - %d:%s",
@@ -1289,7 +1288,7 @@ int SyncRunShellNoIO( char* cmd )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child %d exited.\n", (int)child );
+    /* Notice( "child %d exited.\n", (int)child ); */
     }
 
   return retVal;
@@ -1314,23 +1313,23 @@ void KillExistingCommandInstances( char* commandLine, int sigNo )
   if( EMPTY( commandLine ) )
     return;
 
-  Notice( "KillExistingCommandInstances( %s )", commandLine );
+  /* Notice( "KillExistingCommandInstances( %s )", commandLine ); */
   char* procLine = NULL;
   int nTries = 10;
   while( POpenAndSearch( "/bin/ps -efww", commandLine, &procLine )==0
          && nTries-- )
     {
-    Notice( "Command [%s] already running - will try to stop it", commandLine );
+    /* Notice( "Command [%s] already running - will try to stop it", commandLine ); */
     if( NOTEMPTY( procLine ) )
       {
       char* ptr = NULL;
-      char* userID = strtok_r( procLine, " \t\r\n", &ptr );
+      /* char* userID = strtok_r( procLine, " \t\r\n", &ptr ); */
       char* processID = strtok_r( NULL, " \t\r\n", &ptr );
       long pidNum = -1;
       if( NOTEMPTY( processID ) )
         pidNum = atol( processID );
 
-      Notice( "Killing process %ld which belongs to %s", pidNum, userID );
+      /* Notice( "Killing process %ld which belongs to %s", pidNum, userID ); */
       if( pidNum>0 )
         {
         int err = kill( (pid_t)pidNum, sigNo );
@@ -1368,7 +1367,7 @@ void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo )
   char parentBuf[100];
   snprintf( parentBuf, sizeof(parentBuf)-1, "%ld", (long)parent );
 
-  Notice( "KillEarlierInstancesOfThisProcess( %s )", argv[0] );
+  /* Notice( "KillEarlierInstancesOfThisProcess( %s )", argv[0] ); */
 
   int fileDesc = -1;
   pid_t child = -1;
@@ -1410,7 +1409,7 @@ void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo )
         long procNum = atol( procNumStr );
         if( procNum>0 )
           { /* and it's a real process number */
-          Notice( "Killing predecessor process %ld", procNum );
+          /* Notice( "Killing predecessor process %ld", procNum ); */
           kill( (pid_t)procNum, sigNo );
           }
         }
@@ -1494,7 +1493,7 @@ int SendEMail( char* recipient, char* subject, char* body )
 
   if( WIFEXITED( wStatus ) )
     {
-    Notice( "child %d exited.", (int)child);
+    /* Notice( "child %d exited.", (int)child); */
     retVal = 0;
     }
 

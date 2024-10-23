@@ -361,16 +361,22 @@ _TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName )
     return NULL;
     }
 
+  int n = 0;
   while( list!=NULL )
     {
-    if( NOTEMPTY( list->tag)
-        && strcasecmp(list->tag,tagName)==0 )
+    ++n;
+    if( NOTEMPTY( list->tag )
+        && strcasecmp( list->tag, tagName )==0 )
       {
+      Notice( "FoundTagValueNoCase(%s) in list - case insensitive match", tagName );
       retVal = list;
       break;
       }
     list = list->next;
     }
+
+  if( retVal==NULL )
+    Notice( "FoundTagValueNoCase(%s) - no match in %d element list", tagName, n );
 
   return retVal;
   }
