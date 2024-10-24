@@ -959,3 +959,47 @@ char* TexEscape( char* buf, size_t bufLen, char* original )
 
   return buf;
   }
+
+int CountItemsInCommaSeparatedString( char* string )
+  {
+  int n = 1;
+  for( char* ptr=string; *ptr!=0; ++ptr )
+    if( *ptr==',' )
+      ++n;
+  return n;
+  }
+
+/* 0 == true */
+int StringIsMemberOfCommaSeparatedList( char* little, char* list, char* separator )
+  {
+  if( EMPTY( separator ) )
+    return -3;
+
+  /* edge case for 'true': */
+  if( EMPTY( little ) && EMPTY( list ) )
+    return 0;
+
+  if( EMPTY( little ) )
+    return -1;
+
+  if( EMPTY( list ) )
+    return -2;
+
+  char* copy = strdup( list );
+  char* ptr = NULL;
+  int retVal = -4;
+  for( char* item=strtok_r( copy, separator, &ptr );
+       item!=NULL; item=strtok_r( NULL, separator, &ptr ) )
+      {
+      if( strcasecmp( item, little )==0 )
+        {
+        retVal = 0;
+        break;
+        }
+      }
+
+  free( copy );
+
+  return retVal;
+  }
+
