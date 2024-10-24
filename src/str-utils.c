@@ -1003,3 +1003,26 @@ int StringIsMemberOfCommaSeparatedList( char* little, char* list, char* separato
   return retVal;
   }
 
+/***************************************************************************
+ * Useful for debugging...
+ ***************************************************************************/
+void PrintStringArray( char* arrayName, const char** array, int nItems )
+  {
+  if( EMPTY( arrayName ) )
+    Error( "Cannot print empty string array" );
+
+  if( array==NULL || nItems<1 )
+    {
+    Warning( "%s - empty array", arrayName );
+    return;
+    }
+
+  for( int i=0; i<nItems; ++i )
+    {
+    const char* ptr = array[i];
+    if( EMPTY( ptr ) )
+      fprintf( stderr, "Item %d - empty\n", i );
+    else
+      fprintf( stderr, " %d - %s\n", i, ptr );
+    }
+  }
