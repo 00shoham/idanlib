@@ -8,12 +8,12 @@ enum valueType GuessType( char* str )
   if( *str==0 )
     return VT_STR;
 
-  if( ( (*str)=='-' && AllDigits( str+1 ) )
-      || AllDigits( str ) )
+  if( ( (*str)=='-' && AllDigits( str+1 )==0 )
+      || AllDigits( str )==0 )
     return VT_INT;
 
-  if( ( (*str)=='-' && AllDigitsSingleDot( str+1 ) )
-      || AllDigitsSingleDot( str ) )
+  if( ( (*str)=='-' && AllDigitsSingleDot( str+1 )==0 )
+      || AllDigitsSingleDot( str )==0 )
     return VT_DOUBLE;
 
   return VT_STR;
@@ -368,7 +368,7 @@ _TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName )
     if( NOTEMPTY( list->tag )
         && strcasecmp( list->tag, tagName )==0 )
       {
-      Notice( "FoundTagValueNoCase(%s) in list - case insensitive match", tagName );
+      /* Notice( "FoundTagValueNoCase(%s) in list - case insensitive match", tagName ); */
       retVal = list;
       break;
       }
@@ -376,7 +376,9 @@ _TAG_VALUE* FindTagValueNoCase( _TAG_VALUE* list, char* tagName )
     }
 
   if( retVal==NULL )
-    Notice( "FoundTagValueNoCase(%s) - no match in %d element list", tagName, n );
+    {
+    /* Notice( "FoundTagValueNoCase(%s) - no match in %d element list", tagName, n ); */
+    }
 
   return retVal;
   }
@@ -664,6 +666,49 @@ void PrintTagValue( int indent, _TAG_VALUE* list )
   if( list->next!=NULL )
     {
     PrintTagValue( indent, list->next );
+    }
+  }
+
+void PrintTagValueFromList( _TAG_VALUE* list, char* tag )
+  {
+  if( list==NULL )
+    {
+    Warning( "PrintTagValueFromList() - NULL list" );
+    return;
+    }
+  if( EMPTY( tag ) )
+    {
+    Warning( "PrintTagValueFromList() - empty tag" );
+    return;
+    }
+
+  for( _TAG_VALUE* tv=list; tv!=NULL; tv=tv->next )
+    {
+    if( NOTEMPTY( tv->tag ) && strcasecmp( tv->tag, tag )==0 )
+      {
+      printf( "%s=", tv->tag );
+      switch( tv->type )
+        {
+        case VT_LIST:
+          printf( "[list]\n" );
+          break;
+        case VT_NULL:
+          printf( "NULL\n" );
+          break;
+        case VT_STR:
+          printf( "\"%s\"\n", NULLPROTECT( tv->value ) );
+          break;
+        case VT_INT:
+          printf( "(int)%d\n", tv->iValue );
+          break;
+        case VT_DOUBLE:
+          printf( "(double)%lf\n", tv->dValue );
+          break;
+        default:
+          printf( "{default}\n" );
+          break;
+        }
+      }
     }
   }
 

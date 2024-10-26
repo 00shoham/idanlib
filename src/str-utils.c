@@ -351,21 +351,33 @@ int CountInString( const char* string, const int c )
   return n;
   }
 
+/* 0 if true */
 int AllDigits( char* str )
   {
+  if( str==NULL )
+    return -1;
+  if( *str==0 )
+    return -2;
+
   while( *str!=0 )
     {
     int c = *str;
     if( ! isdigit( c ) )
-      return 0;
+      return -3;
     ++str;
     }
 
-  return 1;
+  return 0;
   }
 
+/* 0 if true */
 int AllDigitsSingleDot( char* str )
   {
+  if( str==NULL )
+    return -1;
+  if( *str==0 )
+    return -2;
+
   int nDots = 0;
   while( (*str)!=0 )
     {
@@ -375,15 +387,14 @@ int AllDigitsSingleDot( char* str )
       if( c == '.' )
         {
         ++nDots;
+        if( nDots>1 )
+          {
+          return -4;
+          }
         }
       else
         {
-        return 0;
-        }
-
-      if( nDots>1 )
-        {
-        return 0;
+        return -3;
         }
       }
 
@@ -392,10 +403,10 @@ int AllDigitsSingleDot( char* str )
 
   if( nDots==1 )
     {
-    return 1;
+    return 0;
     }
 
-  return 0;
+  return -5;
   }
 
 void LowerCase( char* dst, int dstSize, char* src )

@@ -36,6 +36,7 @@ int GetTagValueInt( _TAG_VALUE* list, char* tagName );
 double GetTagValueDouble( _TAG_VALUE* list, char* tagName );
 _TAG_VALUE* GetTagValueList( _TAG_VALUE* list, char* tagName );
 void PrintTagValue( int indent, _TAG_VALUE* list );
+void PrintTagValueFromList( _TAG_VALUE* list, char* tag );
 char* GetTagValueSafe( _TAG_VALUE* list, char* tagName, char* expr );
 void FreeTagValue( _TAG_VALUE* list );
 _TAG_VALUE* DeleteTagValue( _TAG_VALUE* list, char* tag );
