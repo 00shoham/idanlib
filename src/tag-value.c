@@ -1235,3 +1235,32 @@ _TAG_VALUE* ParsePath( char* textPath )
 
   return path;
   }
+
+void PopulateStringValueFromNumeric( _TAG_VALUE* t )
+  {
+  if( t==NULL )
+    return;
+
+  if( NOTEMPTY( t->value ) )
+    return;
+
+  if( t->iValue != INVALID_INT )
+    {
+    char buf[100];
+    snprintf( buf, sizeof(buf)-2, "%d", t->iValue );
+    if( t->value != NULL )
+      free( t->value );
+    t->value = strdup( buf );
+    return;
+    }
+
+  if( t->dValue != INVALID_DOUBLE )
+    {
+    char buf[100];
+    snprintf( buf, sizeof(buf)-2, "%.0lf", t->dValue );
+    if( t->value != NULL )
+      free( t->value );
+    t->value = strdup( buf );
+    return;
+    }
+  }
