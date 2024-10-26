@@ -54,6 +54,7 @@ _TAG_VALUE* ExtractValueFromPath( _TAG_VALUE* tree, _TAG_VALUE* path );
 _TAG_VALUE* ParsePath( char* textPath );
 
 void PopulateStringValueFromNumeric( _TAG_VALUE* t );
+void UppercaseKV( _TAG_VALUE* list, char* tag );
 
 #endif
 

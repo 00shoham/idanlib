@@ -1264,3 +1264,31 @@ void PopulateStringValueFromNumeric( _TAG_VALUE* t )
     return;
     }
   }
+
+void UppercaseKV( _TAG_VALUE* list, char* tag )
+  {
+  if( list==NULL )
+    return;
+  if( EMPTY( tag ) )
+    Error( "UppercaseKV() on empty tag" );
+
+  for( _TAG_VALUE* t = list; t!=NULL; t=t->next )
+    {
+    if( NOTEMPTY( t->tag ) && strcasecmp( t->tag, tag )==0 )
+      {
+      if( NOTEMPTY( t->value ) )
+        {        
+        for( char* ptr=t->value; *ptr!=0; ++ptr )
+          {
+          int c = *ptr;
+          if( islower( c ) )
+            {
+            *ptr = toupper( c );
+            }
+          }
+        }
+      break;
+      }
+    }
+  }
+
