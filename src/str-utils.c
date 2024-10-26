@@ -1021,8 +1021,8 @@ void PrintStringArray( char* arrayName, const char** array, int nItems )
     {
     const char* ptr = array[i];
     if( EMPTY( ptr ) )
-      fprintf( stderr, "Item %d - empty\n", i );
+      printf( "Item %d - empty\n", i );
     else
-      fprintf( stderr, " %d - %s\n", i, ptr );
+      printf( "Item %d - %s\n", i, ptr );
     }
   }
