@@ -792,15 +792,15 @@ void FreeTagValue( _TAG_VALUE* list )
   int isPassword = 0;
   if( list->tag!=NULL )
     {
-    if( strstr( list->tag, "pass" )!=NULL
-        || strstr( list->tag, "PASS" )!=NULL )
+    if( *(list->tag) != 0
+        && ( strstr( list->tag, "pass" )!=NULL || strstr( list->tag, "PASS" )!=NULL ) )
       isPassword = 1;
 
     FREE( list->tag );
     }
   if( list->value!=NULL )
     {
-    if( isPassword )
+    if( isPassword && *(list->value) != 0 )
       memset( list->value, 0, strlen( list->value )-1 );
     FREE( list->value );
     }
