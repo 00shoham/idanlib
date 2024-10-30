@@ -1257,7 +1257,7 @@ void PopulateStringValueFromNumeric( _TAG_VALUE* t )
   if( t->dValue != INVALID_DOUBLE )
     {
     char buf[100];
-    snprintf( buf, sizeof(buf)-2, "%.0lf", t->dValue );
+    snprintf( buf, sizeof(buf)-2, "%f", t->dValue );
     if( t->value != NULL )
       free( t->value );
     t->value = strdup( buf );
