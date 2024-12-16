@@ -96,14 +96,18 @@ time_t FileDate2( const char* folder, const char* fileName )
 
 long FileSize( const char* path )
   {
-  if( FileExists( path )!=0 )
+  int err = FileExists( path );
+  if( err!=0 )
     {
+    Warning( "FileSize(%s) - FileExists() returns %d", path, err );
     return -1;
     }
 
   struct stat sbuf;
-  if( stat( path, &sbuf )<0 )
+  err = stat( path, &sbuf );
+  if( err<0 )
     {
+    Warning( "FileSize(%s) - stat %d", path, err );
     return -2;
     }
 
@@ -599,6 +603,9 @@ int FileCopy( const char* src, const char* dst )
     }
 
   FileCopyHandles( s, d );
+
+  fclose( s );
+  fclose( d );
 
   return 0;
   }
