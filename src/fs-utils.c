@@ -1051,6 +1051,7 @@ int FileMatchesRegex( char* expr, char* fileName )
   if( err!=0 )
     {
     Warning("Cannot compile e-mail RegExp: [%s] (%d)", expr, err);
+    fclose( f );
     return -100 + err;
     }
 
