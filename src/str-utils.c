@@ -980,6 +980,15 @@ int CountItemsInCommaSeparatedString( char* string )
   return n;
   }
 
+int CountItemsInCommaOrBarSeparatedString( char* string )
+  {
+  int n = 1;
+  for( char* ptr=string; *ptr!=0; ++ptr )
+    if( *ptr==',' || *ptr == '|' )
+      ++n;
+  return n;
+  }
+
 /* 0 == true */
 int StringIsMemberOfCommaSeparatedList( char* little, char* list, char* separator )
   {

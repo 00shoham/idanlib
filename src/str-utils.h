@@ -48,6 +48,7 @@ char* TrimCharsFromTail( char* string, char* tailchars );
 char* AppendCharToSizedBuffer( char* dst, char* end, int c );
 char* TexEscape( char* buf, size_t bufLen, char* original );
 int CountItemsInCommaSeparatedString( char* string );
+int CountItemsInCommaOrBarSeparatedString( char* string );
 int StringIsMemberOfCommaSeparatedList( char* little, char* list, char* separator );
 void PrintStringArray( char* arrayName, const char** array, int nItems );
 

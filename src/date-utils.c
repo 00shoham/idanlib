@@ -283,8 +283,8 @@ time_t MMDDToTime( _MMDD* date )
     return time(NULL); /* why not? */
 
   time_t tNow = time(NULL);
-  int Y=date->year;
 
+  int Y=date->year;
   int M=date->month;
   int D=date->day;
 
