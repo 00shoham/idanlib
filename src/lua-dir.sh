@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LUADIR=`find /usr/include -type d -name '*lua*' | sort -rn | head -1`
+LUADIR=`find /usr/include -type d -name '*lua*' | grep -v 5.4 | sort -rn | head -1`
 if [ -z "$LUADIR" ] ; then
   if [ -f "/usr/include/lua.h" ]; then
     echo "No special include directive required" > /dev/null

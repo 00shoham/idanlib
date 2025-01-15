@@ -4,6 +4,7 @@ LUAVER=`find /usr/lib /usr/lib64\
 	-name 'liblua[0-9]\.[0-9]\.a'\
 	-or -name 'liblua-[0-9]\.[0-9]\.so'\
         | sort\
+        | grep -v 5.4\
         | tail -1\
         | sed 's/\.a$//'\
         | sed 's/\.so$//'\
