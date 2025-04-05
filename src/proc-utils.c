@@ -51,10 +51,13 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
   if( pid == 0 ) /* child */
     {
     /* Linux-specific - terminate via SIGHUP if parent exits */
-    prctl( PR_SET_PDEATHSIG, SIGHUP );
+    err = prctl( PR_SET_PDEATHSIG, SIGHUP );
+    if( err ) Warning( "POpenAndRead() - child - prctl error %d", err );
     close( readFD );
-    dup2( writeFD, 1 );
-    dup2( writeFD, 2 );
+    err = dup2( writeFD, 1 );
+    if( err!=1 ) Warning( "POpenAndRead() - child - dup2(A) error %d", err );
+    err = dup2( writeFD, 2 );
+    if( err!=2 ) Warning( "POpenAndRead() - child - dup2(B) error %d", err );
     close( writeFD );
     /*
     Notice( "Calling execv() with cmd %s", args->argv[0] );
@@ -509,6 +512,8 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
   int fileDesc = -1;
   pid_t child = -1;
 
+  /* Notice( "ReadLinesFromCommandEx()" ); */
+
   if( EMPTY( cmd ) )
     {
     Warning( "ReadLinesFromCommandEx(): no command specified" );
@@ -548,7 +553,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
   int nBuffersAllocated = DEFAULT_READLINE_NUM_BUFFERS;
   char** bufs = (char**)SafeCalloc( nBuffersAllocated, sizeof( char* ), "ReadLinesFromCommandEx(): pointers to line buffers" );
 
-  char* singleBuffer = (char*)SafeCalloc( maxLineLen, sizeof(char), "ReadLinesFromCommandEx(): single line buffer" );
+  char* singleBuffer = (char*)SafeCalloc( maxLineLen+10, sizeof(char), "ReadLinesFromCommandEx(): single line buffer" );
 
   /*
   Notice( "Allocated %d buffers (%p) and a single %d buffer (%p)",
@@ -563,9 +568,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     return -102;
     }
 
-  /*
-  Notice( "POpenAndRead( %s ) returned %d; fileDesc = %d; child = %d", cmd, err, fileDesc, (int)child );
-  */
+  /* Notice( "POpenAndRead( %s ) returned %d; fileDesc = %d; child = %d", cmd, err, fileDesc, (int)child ); */
 
   int lineNo = 0;
   int nCharsRead = 0;
@@ -578,7 +581,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
 
   int exited = 0;
 
-  for( int j=0; j<5; ++j )
+  for(;;)
     {
     int tElapsed = (int)(time(NULL) - tStart);
     if( tElapsed >= maxTimeoutSeconds )
@@ -601,11 +604,12 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     timeout.tv_sec = timeoutPerReadSeconds;
     timeout.tv_usec = 0;
     
-    /* Notice( "pre-select()" ); */
-
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
 
-    /* Notice( "select() returned %d", result ); */
+    if( FD_ISSET( fileDesc, &readSet ) )
+      ; /* Notice( "read is set" ); */
+    if( FD_ISSET( fileDesc, &exceptionSet ) )
+      ; /* Notice( "exception is set" ); */
 
     if( result>0 )
       {
@@ -615,15 +619,13 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
       while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
         {
         int c = tinyBuf[0];
-        /* Notice( "read [%c]", c ); */
+
         if( c=='\n' )
           {
           bufs[lineNo] = strdup( singleBuffer );
           ptr = singleBuffer;
           *ptr = 0;
           endPtr = ptr + maxLineLen - 2;
-
-          /* Notice( "Completed reading line %d", lineNo ); */
 
           ++lineNo;
           if( lineNo >= nBuffersAllocated )
@@ -663,6 +665,22 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
       }
 
     /* Notice( "Loop around.." ); */
+    }
+
+  if( *singleBuffer != 0 )
+    {
+    bufs[lineNo] = strdup( singleBuffer );
+    ++lineNo;
+    if( lineNo >= nBuffersAllocated )
+      {
+      nBuffersAllocated += 5;
+      bufs = (char**)realloc( bufs, nBuffersAllocated * sizeof(char*) );
+      if( bufs==NULL )
+        {
+        Warning( "ReadLinesFromCommandEx(): failed to allocate array of strings" );
+        return -104;
+        }
+      }
     }
 
   if( fileDesc>0 )
@@ -772,6 +790,13 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
       break;
       }
     }
+
+  /* Technically correct but we no longer need lineNo.
+  if( bufs[lineNo] != 0 )
+    {
+    ++lineNo;
+    }
+  */
 
   if( fileDesc>0 )
     {
