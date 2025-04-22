@@ -51,5 +51,9 @@ int CountItemsInCommaSeparatedString( char* string );
 int CountItemsInCommaOrBarSeparatedString( char* string );
 int StringIsMemberOfCommaSeparatedList( char* little, char* list, char* separator );
 void PrintStringArray( char* arrayName, const char** array, int nItems );
+char* FileNameIfLineMatchesInclude( char* buf );
+int ReadSourceFilesWithIncludes( char* path, char*** linesPtr, int* allocatedLinesPtr, int nLines );
+char* MergeLinesIntoBuffer( int nLines, char** lines );
+char* ReadSourceFileWithIncludes( char* path );
 
 #endif

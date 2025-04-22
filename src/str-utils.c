@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#define READ_SOURCE_LINES_INCREMENT 1000
+
 char generatedIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char validIdentifierChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_.";
 char validFolderChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/";
@@ -1045,4 +1047,152 @@ void PrintStringArray( char* arrayName, const char** array, int nItems )
     else
       printf( "Item %d - %s\n", i, ptr );
     }
+  }
+
+/**********************************************************************
+* Load a file with may include 'include "filename"'
+**********************************************************************/
+char* FileNameIfLineMatchesInclude( char* buf )
+  {
+  if( EMPTY( buf ) )
+    return NULL;
+  if( strncmp( buf, "include ", 8 )!=0 )
+    return NULL;
+  char* ptr = strchr( buf, '"' );
+  if( ptr==NULL )
+    return NULL;
+  if( ptr[ strlen(ptr)-1 ] != '"' )
+    return NULL;
+  char* fileName = strdup( ptr+1 );
+  if( fileName==NULL )
+    Error( "FileNameIfLineMatchesInclude() - Failed to strdup()" );
+  ptr = strchr( fileName, '"' );
+  if( ptr==NULL )
+    Error( "FileNameIfLineMatchesInclude() - impossible NULL searching for second quote" );
+  *ptr = 0;
+  return fileName;
+  }
+
+int ReadSourceFilesWithIncludes( char* path, char*** linesPtr, int* allocatedLinesPtr, int nLines )
+  {
+  if( EMPTY( path ) )
+    Error( "ReadSourceFilesWithIncludes() - empth path" );
+  if( linesPtr==NULL )
+    Error( "ReadSourceFilesWithIncludes() - no lines ptr" );
+  if( allocatedLinesPtr==NULL )
+    Error( "ReadSourceFilesWithIncludes() - no allocatedLines ptr" );
+
+  char folderBuf[BUFLEN];
+  char* folder = GetFolderFromPath( path, folderBuf, sizeof( folderBuf )-2 );
+  char* fileName = GetFilenameFromPath( path );
+  char* fullPath = MakeFullPath( folder, fileName );
+
+  char** lines = *linesPtr;
+  if( (*allocatedLinesPtr)==0 )
+    {
+    *allocatedLinesPtr = READ_SOURCE_LINES_INCREMENT;
+    lines = (char**)malloc( (*allocatedLinesPtr) * sizeof(char*) );
+    if( lines==NULL )
+      Error( "ReadSourceFilesWithIncludes() - failed to allocate %d line ptrs", *allocatedLinesPtr );
+    *linesPtr = lines;
+    }
+
+  FILE* f = fopen( fullPath, "r" );
+  if( f==NULL )
+    Error( "ReadSourceFilesWithIncludes() - failed to open [%s] for reading", fullPath );
+  char buf[BUFLEN];
+  while( fgets( buf, sizeof(buf), f )==buf )
+    {
+    /* remove trailing '\n' or '\r' from the text we just read: */
+    TrimTail( buf );
+
+    /* are we including another file? */
+    char* subFileName = FileNameIfLineMatchesInclude( buf );
+    if( NOTEMPTY( subFileName ) )
+      {
+      char* fileToRead = NULL;
+      if( strchr( subFileName, '/' )!=NULL ) /* explicit path */
+        fileToRead = subFileName;
+      else /* implicit path, assume same folder as parent */
+        fileToRead = MakeFullPath( folder, subFileName );
+
+      nLines = ReadSourceFilesWithIncludes( fileToRead, linesPtr, allocatedLinesPtr, nLines );
+
+      if( fileToRead!=NULL && fileToRead!=subFileName )
+        free( fileToRead );
+
+      continue;
+      }
+
+    /* overran our buffer space */
+    if( nLines >= (*allocatedLinesPtr) )
+      {
+      *(allocatedLinesPtr) += READ_SOURCE_LINES_INCREMENT;
+      lines = (char**)realloc( lines, (*allocatedLinesPtr) * sizeof(char*) );
+      if( lines==NULL )
+        Error( "ReadSourceFilesWithIncludes() - failed to re-allocate %d line ptrs", *allocatedLinesPtr );
+      *linesPtr = lines;
+      }
+
+    /* okay - store the data */
+    lines[nLines++] = strdup( buf );
+    }
+
+  fclose( f );
+  free( fullPath );
+
+  return nLines;
+  }
+
+char* MergeLinesIntoBuffer( int nLines, char** lines )
+  {
+  if( lines==NULL )
+    return NULL;
+
+  int length = 0;
+  for( int i=0; i<nLines; ++i )
+    {
+    if( lines[i]!=NULL )
+      length += strlen(lines[i]) + 1;
+    }
+
+  char* bigBuf = (char*)malloc( length+1 );
+  if( bigBuf==NULL )
+    Error( "MergeLinesIntoBuffer() - failed to allocate %d bytes", length+1 );
+
+  char* ptr = bigBuf;
+  for( int i=0; i<nLines; ++i )
+    {
+    if( lines[i]!=NULL )
+      {
+      strcpy( ptr, lines[i] );
+      ptr += strlen( ptr );
+      *ptr = '\n';
+      ++ptr;
+      *ptr = 0;
+      }
+    }
+
+  return bigBuf;
+  }
+
+char* ReadSourceFileWithIncludes( char* path )
+  {
+  if( EMPTY( path ) )
+    Error( "ReadSourceFileWithIncludes() - no path specified" );
+
+  char** text = NULL;
+  int allocatedLines = 0;
+  int nLines = ReadSourceFilesWithIncludes( path, &text, &allocatedLines, 0 );
+  if( nLines==0 )
+    {
+    if( text != NULL )
+      free( text );
+    return NULL;
+    }
+
+  char* buffer = MergeLinesIntoBuffer( nLines, text );
+  FreeArrayOfStrings( text, nLines );
+
+  return buffer;
   }
