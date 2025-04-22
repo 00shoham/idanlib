@@ -242,7 +242,12 @@ char* GetFolderFromPath( char* path, char* folder, int folderSize )
   dst = folder;
   *dst = 0;
 
-  for( src=path, dst=folder; *src!=0 && (dst-folder)<folderSize-1; ++src, ++dst )
+  if( strchr( path, '/' )==NULL )
+    {
+    return folder;
+    }
+
+  for( src=path; *src!=0 && (dst-folder)<folderSize-1; ++src, ++dst )
     {
     *dst = *src;
     if( *dst == '/' )
