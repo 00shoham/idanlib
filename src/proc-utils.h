@@ -42,4 +42,6 @@ gid_t GetGID( const char* groupName );
 int DoWeHaveATTY();
 int SendEMail( char* recipient, char* subject, char* body );
 
+char* MakeDebugFilename( int argc, char** argv );
+
 #endif

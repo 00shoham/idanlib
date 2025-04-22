@@ -690,6 +690,25 @@ long FileRead2( const char* folder, const char* fileName,
   return l;
   }
 
+void FileWrite( const char* fileName, unsigned char* data, int nBytes )
+  {
+  if( EMPTY( fileName ) )
+    Error( "FileWrite: no fileName" );
+  if( nBytes<0 )
+    Error( "FileWrite: negative number of bytes" );
+  if( data==NULL && nBytes>0 )
+    Error( "FileWrite: expecting %d bytes, got NULL buffer", nBytes );
+
+  FILE* f = fopen( fileName, "w" );
+  if( nBytes>0 )
+    {
+    int nWritten = fwrite( data, sizeof(char), nBytes, f );
+    if( nWritten != nBytes )
+      Warning( "Writing to %s - tried to write %d bytes, only wrote %d", fileName, nBytes, nWritten );
+    }
+  fclose( f );
+  }
+
 void EnsureDirExists( char* path )
   {
   if( EMPTY( path ) )

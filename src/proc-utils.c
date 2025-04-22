@@ -1534,3 +1534,47 @@ int SendEMail( char* recipient, char* subject, char* body )
 
   return retVal;
   }
+
+char* MakeDebugFilename( int argc, char** argv )
+  {
+  char buf[BUFLEN];
+  char* ptr = buf;
+  char* end = buf + sizeof(buf)-20;
+
+  strncpy( ptr, "/tmp/", end-ptr );
+  ptr += strlen( ptr );
+
+  for( int i=0; i<argc && ptr<end ; ++i )
+    {
+    char* arg = argv[i];
+    int l = strlen( arg );
+    for( int j=0; j<l && ptr<end; ++j )
+      {
+      int c = arg[j];
+      if( ! isalpha( c ) )
+        c = '_';
+      *( ptr++ ) = c;
+      *ptr = 0;
+      }
+    }
+
+  *(ptr++) = '_';
+  *ptr = 0;
+  char* whoami = getlogin();
+  if( NOTEMPTY( whoami ) )
+    {
+    int l = strlen( whoami );
+    for( int j=0; j<l && ptr<end; ++j )
+      {
+      int c = whoami[j];
+      if( ! isalpha( c ) )
+        c = '_';
+      *( ptr++ ) = c;
+      *ptr = 0;
+      }
+    }
+
+  strcpy( ptr, ".txt" );
+
+  return strdup( buf );
+  }

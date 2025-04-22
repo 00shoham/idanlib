@@ -23,6 +23,7 @@ int FileCopy2( const char* srcFolder, const char* srcFile,
 long FileRead( const char* filename, unsigned char** data );
 long FileRead2( const char* folder, const char* filename,
                 unsigned char** data );
+void FileWrite( const char* fileName, unsigned char* data, int nBytes );
 char* GetFolderFromPath( char* path, char* folder, int folderSize );
 char* GetFilenameFromPath( char* path );
 char* GetBaseFilenameFromPath( char* path, char* buf, int bufLen );
