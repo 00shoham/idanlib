@@ -452,7 +452,15 @@ int LUAWebTransaction( lua_State* L )
 
   char* cookiesFile = GetTagValue( tv, "COOKIES_FILE" );
   if( EMPTY( cookiesFile ) )
-    cookiesFile = DEFAULT_COOKIES_FILE;
+    {
+    char buf[BUFLEN];
+    char* whoami = getlogin();
+    if( NOTEMPTY( whoami ) )
+      snprintf( buf, sizeof(buf)-2, "/tmp/cookies-%s.txt", whoami );
+    else
+      snprintf( buf, sizeof(buf)-2, DEFAULT_COOKIES_FILE );
+    cookiesFile = strdup( buf );
+    }
 
   /* check that we can write to the cookies file - else we could get errors... */
   int fd = open( cookiesFile, O_RDWR | O_CREAT, 0666 );
