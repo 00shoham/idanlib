@@ -454,7 +454,14 @@ int LUAWebTransaction( lua_State* L )
   if( EMPTY( cookiesFile ) )
     {
     char buf[BUFLEN];
-    char* whoami = getlogin();
+    uid_t effectiveId = geteuid(); /* who are we running as? */
+    struct passwd *passwdEntry = getpwuid( effectiveId );
+    if( passwdEntry==NULL )
+      Error( "Failed to get passwd struct of effective ID %d", (int)effectiveId );
+    if( EMPTY( passwdEntry->pw_name ) )
+      Error( "Failed to get pw_name from actual passwd struct" );
+
+    char* whoami = passwdEntry->pw_name;
     if( NOTEMPTY( whoami ) )
       snprintf( buf, sizeof(buf)-2, "/tmp/cookies-%s.txt", whoami );
     else
