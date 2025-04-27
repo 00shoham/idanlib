@@ -1464,6 +1464,31 @@ gid_t GetGID( const char* groupName )
   return g->gr_gid;
   }
 
+char* NameOfEffectiveUID()
+  {
+  uid_t effectiveId = geteuid();
+  struct passwd passwdBuf;
+  struct passwd *passwdEntry = NULL;
+  char buf[BUFLEN];
+  int errCode = getpwuid_r( effectiveId,
+                          &passwdBuf,
+                          buf,
+                          sizeof(buf)-1,
+                          &passwdEntry );
+  if( errCode )
+    Error( "Failed to get passwd struct of effective ID %d - %d, %d",
+           (int)effectiveId, errCode, errno );
+  if( passwdEntry==NULL )
+    Error( "Failed to get passwd struct of effective ID %d", (int)effectiveId );
+  if( EMPTY( passwdEntry->pw_name ) )
+    Error( "Failed to get pw_name from passwd struct of effective UID" );
+  char* whoami = passwdEntry->pw_name;
+  if( EMPTY( whoami ) )
+    Error( "Empty pw_name from passwd struct of effective UID" );
+
+  return strdup( whoami );
+  }
+
 int DoWeHaveATTY()
   {
   char buf[BUFLEN];
