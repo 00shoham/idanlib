@@ -26,6 +26,7 @@ _TAG_VALUE* NewTagValueInt( char* tag, int value, _TAG_VALUE* list, int replaceD
 _TAG_VALUE* NewTagValueDouble( char* tag, double value, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* NewTagValueGuessType( char* tag, char* value, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* NewTagValueNull( char* tag, _TAG_VALUE* list, int replaceDup );
+int EmptyValue( _TAG_VALUE* tag );
 _TAG_VALUE* NewTagValueList( char* tag, _TAG_VALUE* subList, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* CopyTagValueList( _TAG_VALUE* list );
 char* GetTagValue( _TAG_VALUE* list, char* tagName );

@@ -406,6 +406,38 @@ int GetTagValueInt( _TAG_VALUE* list, char* tagName )
   return retVal;
   }
 
+int EmptyValue( _TAG_VALUE* tag )
+  {
+  if( tag==NULL )
+    return -1;
+
+  if( tag->type == VT_STR )
+    {
+    if( EMPTY( tag->value ) )
+      return 0;
+    else
+      return 1;
+    }
+
+  if( tag->type == VT_INT )
+    {
+    if( tag->iValue==INVALID_INT )
+      return 0;
+    else
+      return 2;
+    }
+
+  if( tag->type == VT_DOUBLE )
+    {
+    if( tag->dValue==INVALID_DOUBLE )
+      return 0;
+    else
+      return 3;
+    }
+
+  return 4;
+  }
+
 double GetTagValueDouble( _TAG_VALUE* list, char* tagName )
   {
   double retVal = INVALID_DOUBLE;
