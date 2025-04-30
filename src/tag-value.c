@@ -801,6 +801,18 @@ _TAG_VALUE* CopyTagValueList( _TAG_VALUE* list )
   return newList;
   }
 
+_TAG_VALUE* CopyTagValueSingle( _TAG_VALUE* tv )
+  {
+  if( tv==NULL )
+    return NULL;
+
+  _TAG_VALUE* newTV = (_TAG_VALUE*)SafeCalloc( 1, sizeof(_TAG_VALUE), "new tag value element" );
+  memcpy( newTV, tv, sizeof( _TAG_VALUE ) );
+  newTV->next = NULL;
+
+  return newTV;
+  }
+
 /* FreeTagValue()
  * Recurively free up memory in a _TAG_VALUE nested linked list.
  * Recommended to set the pointer to the list to NULL after calling this.

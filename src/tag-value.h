@@ -29,6 +29,7 @@ _TAG_VALUE* NewTagValueNull( char* tag, _TAG_VALUE* list, int replaceDup );
 int EmptyValue( _TAG_VALUE* tag );
 _TAG_VALUE* NewTagValueList( char* tag, _TAG_VALUE* subList, _TAG_VALUE* list, int replaceDup );
 _TAG_VALUE* CopyTagValueList( _TAG_VALUE* list );
+_TAG_VALUE* CopyTagValueSingle( _TAG_VALUE* list );
 char* GetTagValue( _TAG_VALUE* list, char* tagName );
 _TAG_VALUE* FindTagValue( _TAG_VALUE* list, char* tagName );
 _TAG_VALUE* FindTagValueByValue( _TAG_VALUE* list, char* value );
