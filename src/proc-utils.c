@@ -1,5 +1,9 @@
 #include "utils.h"
 
+/*
+#define DEBUG 1
+*/
+
 int ProcessExistsAndIsMine( pid_t p )
   {
   if( getpgid(p) < 0 )
@@ -424,11 +428,19 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   if( maxtimeSeconds<=timeoutSeconds )
     return -14;
 
+#ifdef DEBUG
+  Notice( "ReadLineFromCommand( %s ) bufLen=%d, timeout=%d, maxtime=%d", cmd, bufSize, timeoutSeconds, maxtimeSeconds );
+#endif
+
   int fileDesc = -1;
   pid_t child = -1;
 
   int err = POpenAndRead( cmd, &fileDesc, &child );
   if( err ) Error( "Cannot popen child to run [%s].", cmd );
+
+#ifdef DEBUG
+  Notice( "ReadLineFromCommand() --> POpenAndRead() returned child process %d; read fd=%d", (int)child, fileDesc );
+#endif
 
   /* Notice( "ReadLineFromCommand(%s) - fileDesc=%d", cmd, fileDesc ); */
 
@@ -439,18 +451,20 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   time_t tStart = time(NULL);
   int exited = 0;
 
+  fd_set readSet;
+  fd_set exceptionSet;
+  struct timeval timeout;
+
   for(;;)
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
-      /* Notice( "ReadLineFromCommand(%s) - timeout", cmd ); */
+#ifdef DEBUG
+      Notice( "ReadLineFromCommand(%s) - timeout", cmd );
+#endif
       retVal = -3;
       break;
       }
-
-    fd_set readSet;
-    fd_set exceptionSet;
-    struct timeval timeout;
 
     FD_ZERO( &readSet );
     FD_SET( fileDesc, &readSet );
@@ -459,24 +473,36 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
     
+    /* Note that this might return 0 - nothing ready - because the
+       child exited.  we will try one last non-blocking read
+       later, outside the loop. */
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+#ifdef DEBUG
+      Notice( "ReadLineFromCommand(%s) - select() returned %d", cmd, result );
+#endif
     if( result>0 )
       {
       int nBytes = read( fileDesc, ptr, endPtr-ptr );
-      /* Notice( "ReadLineFromCommand(%s) - read %d bytes", cmd, nBytes ); */
+#ifdef DEBUG
+      Notice( "ReadLineFromCommand(%s) - read %d bytes", cmd, nBytes );
+#endif
       if( nBytes>0 )
         {
         ptr += nBytes;
         *ptr = 0;
         if( strchr( buf, '\n' )!=NULL )
           {
-          /* Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd ); */
+#ifdef DEBUG
+          Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd );
+#endif
           break;
           }
         }
       }
 
-    /* Notice( "ReadLineFromCommand(%s) - waitpid()", cmd ); */
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) - calling waitpid()", cmd );
+#endif
     int wStatus;
     if( waitpid( child, &wStatus, WNOHANG )==-1 )
       {
@@ -485,25 +511,68 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       break;
       }
 
-    /* Notice( "ReadLineFromCommand(%s) - WIFEXITED( %d )", cmd, wStatus ); */
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) - WIFEXITED( %d )", cmd, wStatus );
+#endif
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      /* Notice( "child %d exited.", (int)child ); */
+#ifdef DEBUG
+      Notice( "child %d exited.", (int)child );
+#endif
       retVal = 0;
       break;
       }
     }
+  /* QQQ race condition?  printed something while we were checking for exit? */
+
+  /* try a final read before we give up on this file descriptor. */
+  FD_ZERO( &readSet );
+  FD_SET( fileDesc, &readSet );
+  FD_ZERO( &exceptionSet );
+  FD_SET( fileDesc, &exceptionSet );
+  timeout.tv_sec = timeoutSeconds;
+  timeout.tv_usec = 0;
+  
+  int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) (B) - select() returned %d", cmd, result );
+#endif
+  if( result>0 )
+    {
+    int nBytes = read( fileDesc, ptr, endPtr-ptr );
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) (B) - read %d bytes", cmd, nBytes );
+#endif
+    if( nBytes>0 )
+      {
+      ptr += nBytes;
+      *ptr = 0;
+      if( strchr( buf, '\n' )!=NULL )
+        {
+#ifdef DEBUG
+        Notice( "ReadLineFromCommand(%s) (B) - read \\n - all done", cmd );
+#endif
+        }
+      }
+    }
 
   close( fileDesc );
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) - exited read loop", cmd );
+#endif
 
   if( ! exited )
     {
-    /* Notice( "ReadLineFromCommand(%s) - child did not exit - kill it", cmd ); */
+#ifdef DEBUG
+    Notice( "ReadLineFromCommand(%s) - child did not exit - kill it", cmd );
+#endif
     kill( child, SIGHUP );
     }
 
-  /* Notice( "ReadLineFromCommand(%s) - returning %d", cmd, retVal ); */
+#ifdef DEBUG
+  Notice( "ReadLineFromCommand(%s) - returning %d", cmd, retVal );
+#endif
   return retVal;
   }
 
@@ -581,6 +650,10 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
 
   int exited = 0;
 
+  fd_set readSet;
+  fd_set exceptionSet;
+  struct timeval timeout;
+
   for(;;)
     {
     int tElapsed = (int)(time(NULL) - tStart);
@@ -592,10 +665,6 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
       }
 
     /* Notice( "tElapsed = %d", tElapsed ); */
-
-    fd_set readSet;
-    fd_set exceptionSet;
-    struct timeval timeout;
 
     FD_ZERO( &readSet );
     FD_SET( fileDesc, &readSet );
@@ -667,6 +736,41 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     /* Notice( "Loop around.." ); */
     }
 
+  /* potentially read more here because of race condition with end of process and read */
+  char tinyBuf[2];
+  tinyBuf[0] = 0;
+  int n = 0;
+  while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
+    {
+    int c = tinyBuf[0];
+
+    if( c=='\n' )
+      {
+      bufs[lineNo] = strdup( singleBuffer );
+      ptr = singleBuffer;
+      *ptr = 0;
+      endPtr = ptr + maxLineLen - 2;
+
+      ++lineNo;
+      if( lineNo >= nBuffersAllocated )
+        {
+        nBuffersAllocated += DEFAULT_READLINE_NUM_BUFFERS;
+        bufs = (char**)realloc( bufs, nBuffersAllocated * sizeof(char*) );
+        if( bufs==NULL )
+          {
+          Warning( "ReadLinesFromCommandEx(): failed to allocate array of strings" );
+          return -103;
+          }
+        }
+      }
+    else
+      {
+      *ptr = c;
+      ++ptr;
+      *ptr = 0;
+      }
+    }
+
   if( *singleBuffer != 0 )
     {
     bufs[lineNo] = strdup( singleBuffer );
@@ -725,17 +829,17 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
 
   int exited = 0;
 
-  while( fileDesc > 0 )
+  fd_set readSet;
+  fd_set exceptionSet;
+  struct timeval timeout;
+
+  for(;;)
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
       retVal = -3;
       break;
       }
-
-    fd_set readSet;
-    fd_set exceptionSet;
-    struct timeval timeout;
 
     FD_ZERO( &readSet );
     FD_SET( fileDesc, &readSet );
@@ -791,12 +895,32 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
       }
     }
 
-  /* Technically correct but we no longer need lineNo.
-  if( bufs[lineNo] != 0 )
+  /* potentially, due to a race condition, child ended before we could read */
+  char tinyBuf[2];
+  tinyBuf[0] = 0;
+  int n = 0;
+  while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
     {
-    ++lineNo;
+    int c = tinyBuf[0];
+    if( c=='\n' )
+      {
+      ++lineNo;
+      if( lineNo >= nBufs )
+        {
+        close( fileDesc );
+        fileDesc = -1;
+        break;
+        }
+      ptr = bufs[lineNo];
+      endPtr = ptr + bufSize - 2;
+      }
+    else
+      {
+      *ptr = c;
+      ++ptr;
+      *ptr = 0;
+      }
     }
-  */
 
   if( fileDesc>0 )
     {
@@ -821,7 +945,9 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
   if( err ) Error( "Cannot popen child to run [%s].", cmd );
 
   int l = strlen(stdinLine);
-  int nBytes = write( writeFD, stdinLine, l );
+  int nBytes = -1;
+
+  nBytes = write( writeFD, stdinLine, l );
   if( nBytes>0 )
     {
     if( nBytes!=l )
@@ -836,6 +962,10 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
   time_t tStart = time(NULL);
   int exited = 0;
 
+  fd_set readSet;
+  fd_set exceptionSet;
+  struct timeval timeout;
+
   for(;;)
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
@@ -843,10 +973,6 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
       retVal = -3;
       break;
       }
-
-    fd_set readSet;
-    fd_set exceptionSet;
-    struct timeval timeout;
 
     FD_ZERO( &readSet );
     FD_SET( readFD, &readSet );
@@ -885,6 +1011,15 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
       retVal = 0;
       break;
       }
+    }
+
+  /* potentially read some more due to race between child ending and
+     previous read */
+  nBytes = read( readFD, ptr, endPtr-ptr );
+  if( nBytes>0 )
+    {
+    ptr += nBytes;
+    *ptr = 0;
     }
 
   close( readFD );
