@@ -67,10 +67,16 @@ void mysyslog( int level, const char* prefix, const char* msg )
   else
     {
     LOCK_MUTEX
-    FILE* where = stdout;
+    FILE* where = stderr;
     if( logFileHandle!=NULL )
       where = logFileHandle;
     fputs( longtime, where );
+    if( glob_argv!=NULL && NOTEMPTY( glob_argv[0] ) )
+      {
+      fputs( " ", where );
+      fputs( glob_argv[0], where );
+      fputs( " - ", where );
+      }
     if( NOTEMPTY( parsingLocation ) )
       fputs( parsingLocation, where );
     fputs( msg, where );
