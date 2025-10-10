@@ -12,3 +12,7 @@ They are:
   * lua - used for running simple scripts at runtime.
 
   * uuid - used to generate globally unique identifiers.
+
+Not every project I work on requires all of these, but each of these
+is required by at least one project...  Hence, this project includes
+all of the dependencies (and no, I don't plan to remove any).
