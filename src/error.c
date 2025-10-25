@@ -45,7 +45,7 @@ void mysyslog( int level, const char* prefix, const char* msg )
       fputs( longtime, logFileHandle );
       if( NOTEMPTY( parsingLocation ) )
         {
-        fputs( "[ ", logFileHandle );
+        fputs( " [", logFileHandle );
         fputs( parsingLocation, logFileHandle );
         fputs( "] ", logFileHandle );
         }
@@ -83,7 +83,7 @@ void mysyslog( int level, const char* prefix, const char* msg )
       }
     if( NOTEMPTY( parsingLocation ) )
       {
-      fputs( "[ ", where );
+      fputs( " [", where );
       fputs( parsingLocation, where );
       fputs( "] ", where );
       }
