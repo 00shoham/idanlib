@@ -59,7 +59,7 @@ void mysyslog( int level, const char* prefix, const char* msg )
       if( NOTEMPTY( parsingLocation ) )
         {
         char buf[BUFLEN];
-        snprintf(buf,sizeof(buf)-1,"%s %s", parsingLocation, msg );
+        snprintf(buf,sizeof(buf)-1," [%s] %s", parsingLocation, msg );
         syslog( level, "%s", msg );
         }
       else
@@ -82,7 +82,11 @@ void mysyslog( int level, const char* prefix, const char* msg )
       fputs( " - ", where );
       }
     if( NOTEMPTY( parsingLocation ) )
+      {
+      fputs( "[ ", where );
       fputs( parsingLocation, where );
+      fputs( "] ", where );
+      }
     fputs( msg, where );
     fputs( "\n", where );
     fflush( where );
