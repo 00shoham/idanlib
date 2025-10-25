@@ -44,7 +44,11 @@ void mysyslog( int level, const char* prefix, const char* msg )
       LOCK_MUTEX
       fputs( longtime, logFileHandle );
       if( NOTEMPTY( parsingLocation ) )
+        {
+        fputs( "[ ", logFileHandle );
         fputs( parsingLocation, logFileHandle );
+        fputs( "] ", logFileHandle );
+        }
       fputs( msg, logFileHandle );
       fputs( "\n", logFileHandle );
       fflush( logFileHandle );
