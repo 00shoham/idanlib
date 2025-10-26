@@ -58,5 +58,8 @@ _TAG_VALUE* ParsePath( char* textPath );
 void PopulateStringValueFromNumeric( _TAG_VALUE* t );
 void UppercaseKV( _TAG_VALUE* list, char* tag );
 
+_TAG_VALUE* PushStringOnStack( _TAG_VALUE* stack, char* string );
+_TAG_VALUE* PopStringFromStack( _TAG_VALUE* stack, char** stringPtr );
+
 #endif
 

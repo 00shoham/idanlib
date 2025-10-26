@@ -1336,3 +1336,24 @@ void UppercaseKV( _TAG_VALUE* list, char* tag )
     }
   }
 
+_TAG_VALUE* PushStringOnStack( _TAG_VALUE* stack, char* string )
+  {
+  _TAG_VALUE* newTV = NewTagValue( NULL, string, stack, 0 );
+  newTV->next = stack;
+  return newTV;
+  }
+
+_TAG_VALUE* PopStringFromStack( _TAG_VALUE* stack, char** stringPtr )
+  {
+  if( stringPtr==NULL )
+    Error( "PopStringFromStack() with NULL stringPtr" );
+  if( stack==NULL )
+    {
+    *stringPtr = NULL;
+    return NULL;
+    }
+  *stringPtr = stack->value;
+  _TAG_VALUE* retVal = stack->next;
+  free( stack );
+  return retVal;
+  }
