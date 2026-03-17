@@ -713,6 +713,82 @@ int ListToJSON( _TAG_VALUE* list, char* buf, int bufLen )
   return 0;
   }
 
+int ListToURLEncoded( _TAG_VALUE* list, char* buf, int bufLen )
+  {
+  if( buf==NULL || bufLen<10 )
+    {
+    return -1;
+    }
+
+  char* ptr = buf;
+  char* end = buf+bufLen-1;
+
+  int itemNum = 0;
+  for( ; list!=NULL; list=list->next )
+    {
+    if( itemNum )
+      {
+      strncpy( ptr, "&", end-ptr );
+      ptr += strlen( ptr );
+      }
+
+    if( NOTEMPTY( list->tag ) )
+      {
+      snprintf( ptr, end-ptr, "%s=", list->tag );
+      ptr += strlen( ptr );
+      }
+
+    switch( list->type )
+      {
+      case VT_INVALID:
+        Warning( "Composing tags into URL Encoded - [%s] has invalid type", NULLPROTECT( list->tag ) );
+        break;
+
+      case VT_LIST:
+        Warning( "Composing tags into URL Encoded - [%s] has unsupported list type", NULLPROTECT( list->tag ) );
+        break;
+
+      case VT_STR:
+        if( NOTEMPTY( list->value ) )
+          {
+          snprintf( ptr, end-ptr, "%s", list->value );
+          ptr += strlen( ptr );
+          }
+        break;
+
+      case VT_INT:
+        snprintf( ptr, end-ptr, "%d", list->iValue );
+        ptr += strlen( ptr );
+        break;
+
+      case VT_DOUBLE:
+        {
+        int iValue;
+        if( NearlyInteger( list->dValue, &iValue ) )
+          {
+          snprintf( ptr, end-ptr, "%d", iValue );
+          ptr += strlen( ptr );
+          }
+        else
+          {
+          snprintf( ptr, end-ptr, "%lf", list->dValue );
+          ptr += strlen( ptr );
+          }
+        }
+        break;
+
+      case VT_NULL:
+        snprintf( ptr, end-ptr, "null" );
+        ptr += strlen( ptr );
+        break;
+      }
+
+    ++itemNum;
+    }
+
+  return 0;
+  }
+
 int NestedListToJSON( const char* arrayName, _TAG_VALUE* list, char* buf, int bufLen )
   {
   if( buf==NULL || bufLen<10 )

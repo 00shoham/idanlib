@@ -12,6 +12,7 @@ int TagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list );
 int NumericTagValueTableOnLuaStack( lua_State* L, _TAG_VALUE* list );
 _TAG_VALUE* LuaTableToTagValue( lua_State *L );
 int TableToJSON( lua_State* L );
+int TableToURLEncoding( lua_State* L );
 int JSONToTable( lua_State* L );
 int GetTableSizeFunction( lua_State* L );
 int LUAWebTransaction( lua_State* L );

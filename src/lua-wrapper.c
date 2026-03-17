@@ -303,6 +303,36 @@ int TableToJSON( lua_State* L )
   return 1;
   }
 
+int TableToURLEncoding( lua_State* L )
+  {
+  if( lua_gettop( L )<1 || ! lua_istable(L, -1) )
+    {
+    Warning( "Top of LUA stack is not a table" );
+    return 0;
+    }
+
+  _TAG_VALUE* tv = LuaTableToTagValue( L );
+  if( tv==NULL )
+    {
+    Warning( "Failed to convert LUA table to _TAG_VALUE" );
+    return 0;
+    }
+
+  char buf[BUFLEN];
+  int err = ListToURLEncoded( tv, buf, sizeof(buf)-1 );
+  if( err )
+    {
+    Warning( "Failed to _TAG_VALUE to JSON (%d)", err );
+    FreeTagValue( tv );
+    return 0;
+    }
+
+  lua_pushstring( L, buf );
+
+  FreeTagValue( tv );
+  return 1;
+  }
+
 int JSONToTable( lua_State* L )
   {
   if( lua_gettop( L )<1 || ! lua_isstring(L, -1) )
@@ -930,6 +960,9 @@ lua_State* LUAInit()
 
   lua_pushcfunction( L, TableToJSON);
   lua_setglobal( L, "TableToJSON" );
+
+  lua_pushcfunction( L, TableToURLEncoding);
+  lua_setglobal( L, "TableToURLEncoding" );
 
   lua_pushcfunction( L, JSONToTable );
   lua_setglobal( L, "JSONToTable" );
