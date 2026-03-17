@@ -189,7 +189,10 @@ _TAG_VALUE* NewTagValueInt( char* tag, int value, _TAG_VALUE* list, int replaceD
 
   /* nope - it's new.  create a new item in the list */
   _TAG_VALUE* n = (_TAG_VALUE*)SafeCalloc(1, sizeof( _TAG_VALUE ), "_TAG_VALUE" );
-  n->tag = strdup( tag );
+  if( tag==NULL )
+    n->tag = NULL;
+  else
+    n->tag = strdup( tag );
   n->iValue = value;
   n->type = VT_INT;
   n->subHeaders = NULL;
@@ -215,7 +218,10 @@ _TAG_VALUE* NewTagValueDouble( char* tag, double value, _TAG_VALUE* list, int re
 
   /* nope - it's new.  create a new item in the list */
   _TAG_VALUE* n = (_TAG_VALUE*)SafeCalloc(1, sizeof( _TAG_VALUE ), "_TAG_VALUE" );
-  n->tag = strdup( tag );
+  if( tag==NULL )
+    n->tag = NULL;
+  else
+    n->tag = strdup( tag );
   n->dValue = value;
   n->type = VT_DOUBLE;
   n->subHeaders = NULL;
@@ -1353,6 +1359,28 @@ _TAG_VALUE* PopStringFromStack( _TAG_VALUE* stack, char** stringPtr )
     return NULL;
     }
   *stringPtr = stack->value;
+  _TAG_VALUE* retVal = stack->next;
+  free( stack );
+  return retVal;
+  }
+
+_TAG_VALUE* PushIntOnStack( _TAG_VALUE* stack, int val )
+  {
+  _TAG_VALUE* newTV = NewTagValueInt( NULL, val, stack, 0 );
+  newTV->next = stack;
+  return newTV;
+  }
+
+_TAG_VALUE* PopIntFromStack( _TAG_VALUE* stack, int* valPtr )
+  {
+  if( valPtr==NULL )
+    Error( "PopIntFromStack() with NULL valPtr" );
+  if( stack==NULL )
+    {
+    *valPtr = INVALID_INT;
+    return NULL;
+    }
+  *valPtr = stack->iValue;
   _TAG_VALUE* retVal = stack->next;
   free( stack );
   return retVal;
