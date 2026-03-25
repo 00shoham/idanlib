@@ -62,6 +62,7 @@ void ClearCookie( char* cookie );
 char* GetCookieFromEnvironment( char* cookie );
 
 char* RemoveURLEncoding( char* src, char* dst );
+int ListToURLEncoded( _TAG_VALUE* list, char* buf, int bufLen );
 _TAG_VALUE* ParseQueryString( _TAG_VALUE* list, char* string );
 
 void CGIHeader( char* contentType,
