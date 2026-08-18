@@ -574,6 +574,10 @@ char* RemoveURLEncoding( char* src, char* dst )
         *dptr = *sptr;
         }
       }
+    else if( (*sptr)=='+' )
+      {
+      *dptr = ' ';
+      }
     else
       {
       *dptr = *sptr;
@@ -698,7 +702,7 @@ _TAG_VALUE* ParseQueryString( _TAG_VALUE* list, char* string )
 
   if( tag!=NULL && value!=NULL )
     {
-    if( strstr( value, "%" )!=NULL )
+    if( strchr( value, '%' )!=NULL || strchr( value, '+' )!=NULL )
       { /* potentially remove URL encoding */
       char* buf = malloc( strlen(value)+2 );
       char* dst = RemoveURLEncoding( value, buf );
