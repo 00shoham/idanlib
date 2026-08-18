@@ -1,7 +1,7 @@
 #include "utils.h"
 
-/* #undef DEBUG */
-#define DEBUG 1
+#undef DEBUG 
+/* #define DEBUG 1 */
 
 char hexDigits[] = "0123456789abcdef";
 
