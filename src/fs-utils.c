@@ -717,6 +717,9 @@ void FileWrite( const char* fileName, unsigned char* data, int nBytes )
     Error( "FileWrite: expecting %d bytes, got NULL buffer", nBytes );
 
   FILE* f = fopen( fileName, "w" );
+  if( f==NULL )
+    Error( "Failed to open %s for writing", fileName );
+
   if( nBytes>0 )
     {
     int nWritten = fwrite( data, sizeof(char), nBytes, f );
