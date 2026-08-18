@@ -690,6 +690,23 @@ long FileRead2( const char* folder, const char* fileName,
   return l;
   }
 
+int ReadTextFromHandleIntoBuffer( FILE* f, char* buffer, int bufLen )
+  {
+  if( f==NULL )
+    return -1;
+
+  char* ptr = buffer;
+  char* end = ptr + bufLen - 1;
+  while( !feof( f ) && ptr<end )
+    {
+    if( fgets( ptr, end-ptr, f )!=ptr )
+      break;
+    ptr += strlen( ptr );
+    }
+
+  return ptr-buffer;
+  }
+
 void FileWrite( const char* fileName, unsigned char* data, int nBytes )
   {
   if( EMPTY( fileName ) )
