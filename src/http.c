@@ -1002,6 +1002,26 @@ void DownloadFile( long filesize, char* path, char* fileName )
     }
   }
 
+void DownloadBuffer( long nBytes, char* path, char* buffer, char* fileName )
+  {
+  if( nBytes==0 || EMPTY( path ) || EMPTY( buffer ) || EMPTY( fileName ) )
+    {
+    Notice( "DownloadBuffer( NULL )" );
+    return;
+    }
+
+  printf( "Content-Type: application/octet-stream\r\n");
+  printedContentType = 1;
+  printf( "Content-Disposition: attachment; filename=\"%s\"\r\n", fileName );
+  printf( "Content-Length: %ld\r\n", nBytes );
+  printf( "X-Pad: avoid browser bug\r\n");
+  printf( "\r\n" );
+
+  int m = fwrite( buffer, sizeof(char), nBytes, stdout );
+  if( m!=nBytes )
+    Warning("Failed to write file @ %'lu", m );
+  }
+
 void DownloadChunkedStream( int fd, char* fileName )
   {
   printf( "Content-Type: application/octet-stream\r\n");
