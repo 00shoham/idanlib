@@ -1002,9 +1002,9 @@ void DownloadFile( long filesize, char* path, char* fileName )
     }
   }
 
-void DownloadBuffer( long nBytes, char* path, char* buffer, char* fileName )
+void DownloadBuffer( long nBytes, char* buffer, char* fileName )
   {
-  if( nBytes==0 || EMPTY( path ) || EMPTY( buffer ) || EMPTY( fileName ) )
+  if( nBytes==0 || EMPTY( buffer ) || EMPTY( fileName ) )
     {
     Notice( "DownloadBuffer( NULL )" );
     return;
