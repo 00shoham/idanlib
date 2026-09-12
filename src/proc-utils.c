@@ -1,8 +1,6 @@
 #include "utils.h"
 
-/*
-#define DEBUG 1
-*/
+/* #define DEBUG 1 */
 
 int ProcessExistsAndIsMine( pid_t p )
   {
@@ -442,8 +440,6 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   Notice( "ReadLineFromCommand() --> POpenAndRead() returned child process %d; read fd=%d", (int)child, fileDesc );
 #endif
 
-  /* Notice( "ReadLineFromCommand(%s) - fileDesc=%d", cmd, fileDesc ); */
-
   char* ptr = buf;
   char* endPtr = buf + bufSize - 2;
 
@@ -811,14 +807,39 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
 
 int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int timeoutSeconds, int maxtimeSeconds )
   {
+  if( EMPTY( cmd ) )
+    return -10;
+  if( bufs==NULL )
+    return -11;
+  if( nBufs<=0 )
+    return -12;
+  if( bufSize<2 )
+    return -13;
+  if( timeoutSeconds<1 )
+    return -14;
+  if( maxtimeSeconds<=timeoutSeconds )
+    return -15;
+
+#ifdef DEBUG
+  Notice( "ReadLinesFromCommand( %s ) nBufs=%d, bufSize=%d, timeout=%d, maxtime=%d", cmd, nBufs, bufSize, timeoutSeconds, maxtimeSeconds );
+#endif
+
   int fileDesc = -1;
   pid_t child = -1;
 
   for( int i=0; i<nBufs; ++i )
+    {
+    if( bufs[i] == NULL )
+      return -16;
     *(bufs[i]) = 0;
+    }
 
   int err = POpenAndRead( cmd, &fileDesc, &child );
   if( err ) Error( "Cannot popen child to run [%s].", cmd );
+
+#ifdef DEBUG
+  Notice( "ReadLinesFromCommand() --> POpenAndRead() returned child process %d; read fd=%d", (int)child, fileDesc );
+#endif
 
   int lineNo = 0;
   char* ptr = bufs[lineNo];
@@ -837,6 +858,9 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
+#ifdef DEBUG
+      Notice( "ReadLinesFromCommand(%s) - timeout", cmd );
+#endif
       retVal = -3;
       break;
       }
@@ -848,6 +872,9 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
     timeout.tv_sec = timeoutSeconds;
     timeout.tv_usec = 0;
     
+    /* Note that this might return 0 - nothing ready - because the
+       child exited.  we will try one last non-blocking read
+       later, outside the loop. */
     int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
     if( result>0 )
       {
@@ -859,6 +886,9 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
         int c = tinyBuf[0];
         if( c=='\n' )
           {
+#ifdef DEBUG
+          Notice( "ReadLinesFromCommand(%s) - lines[%d] = [%s]", cmd, lineNo, bufs[lineNo] );
+#endif
           ++lineNo;
           if( lineNo >= nBufs )
             {
@@ -889,36 +919,54 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
     if( WIFEXITED( wStatus ) )
       {
       exited = 1;
-      /* Notice( "child %d exited.", (int)child ); */
+#ifdef DEBUG
+      Notice( "child %d exited.", (int)child );
+#endif
       retVal = 0;
       break;
       }
     }
 
-  /* potentially, due to a race condition, child ended before we could read */
-  char tinyBuf[2];
-  tinyBuf[0] = 0;
-  int n = 0;
-  while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
+  /* try a final read before we give up on this file descriptor. */
+  FD_ZERO( &readSet );
+  FD_SET( fileDesc, &readSet );
+  FD_ZERO( &exceptionSet );
+  FD_SET( fileDesc, &exceptionSet );
+  timeout.tv_sec = timeoutSeconds;
+  timeout.tv_usec = 0;
+
+  int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+#ifdef DEBUG
+    Notice( "ReadLinesFromCommand(%s) (B) - select() returned %d", cmd, result );
+#endif
+
+  if( result > 0 )
     {
-    int c = tinyBuf[0];
-    if( c=='\n' )
+    /* potentially, due to a race condition, child ended before we could read */
+    char tinyBuf[2];
+    tinyBuf[0] = 0;
+    int n = 0;
+    while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
       {
-      ++lineNo;
-      if( lineNo >= nBufs )
+      int c = tinyBuf[0];
+      if( c=='\n' )
         {
-        close( fileDesc );
-        fileDesc = -1;
-        break;
+        ++lineNo;
+        if( lineNo >= nBufs )
+          {
+          close( fileDesc );
+          fileDesc = -1;
+          break;
+          }
+        ptr = bufs[lineNo];
+        endPtr = ptr + bufSize - 2;
         }
-      ptr = bufs[lineNo];
-      endPtr = ptr + bufSize - 2;
-      }
-    else
-      {
-      *ptr = c;
-      ++ptr;
-      *ptr = 0;
+      else
+        {
+        *ptr = c;
+        ++ptr;
+        *ptr = 0;
+        }
       }
     }
 
