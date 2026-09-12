@@ -379,7 +379,7 @@ int AsyncReadFromChildProcess( char* cmd,
         *ptr = 0;
         break;
         }
-      if( *ptr=='\n' )
+      if( (*ptr)=='\n' || (*ptr)=='\r' )
         {
         ++ptr;
         *ptr = 0;
@@ -477,7 +477,7 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
   fd_set exceptionSet;
   struct timeval timeout;
 
-  for(;;)
+  while( fileDesc>0 && exited==0 )
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
@@ -517,6 +517,8 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
 #ifdef DEBUG
           Notice( "ReadLineFromCommand(%s) - read \\n - all done", cmd );
 #endif
+          close( fileDesc );
+          fileDesc = -1;
           break;
           }
         }
@@ -545,9 +547,15 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       retVal = 0;
       break;
       }
+    else
+      {
+#ifdef DEBUG
+      Notice( "child %d has not yet exited, apparently.", (int)child );
+#endif
+      }
     }
 
-  if( fileDesc>0 )
+  if( exited==0 && fileDesc>0 )
     {
     /* try a final read before we give up on this file descriptor. */
     FD_ZERO( &readSet );
@@ -576,6 +584,8 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
 #ifdef DEBUG
           Notice( "ReadLineFromCommand(%s) (B) - read \\n - all done", cmd );
 #endif
+          close( fileDesc );
+          fileDesc = -1;
           }
         }
       }
@@ -683,7 +693,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
   fd_set exceptionSet;
   struct timeval timeout;
 
-  for(;;)
+  while( fileDesc>0 && exited==0 )
     {
     int tElapsed = (int)(time(NULL) - tStart);
     if( tElapsed >= maxTimeoutSeconds )
@@ -718,7 +728,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
         {
         int c = tinyBuf[0];
 
-        if( c=='\n' )
+        if( c=='\n' || c=='\r' )
           {
           bufs[lineNo] = strdup( singleBuffer );
           ptr = singleBuffer;
@@ -773,7 +783,7 @@ int ReadLinesFromCommandEx( char* cmd, char*** bufsPtr, int maxLineLen, int time
     {
     int c = tinyBuf[0];
 
-    if( c=='\n' )
+    if( c=='\n' || c=='\r' )
       {
       bufs[lineNo] = strdup( singleBuffer );
       ptr = singleBuffer;
@@ -887,7 +897,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
   fd_set exceptionSet;
   struct timeval timeout;
 
-  for(;;)
+  while( fileDesc>0 && exited==0 )
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
@@ -917,7 +927,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
       while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
         {
         int c = tinyBuf[0];
-        if( c=='\n' )
+        if( c=='\n' || c=='\r' )
           {
 #ifdef DEBUG
           Notice( "ReadLinesFromCommand(%s) - lines[%d] = [%s]", cmd, lineNo, bufs[lineNo] );
@@ -927,6 +937,9 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
             {
             close( fileDesc );
             fileDesc = -1;
+#ifdef DEBUG
+            Notice( "ReadLinesFromCommand(%s) - got enough - closing and breaking", cmd );
+#endif
             break;
             }
           ptr = bufs[lineNo];
@@ -964,7 +977,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
   Notice( "broke out of read loop.  fileDesc=%d", fileDesc );
 #endif
 
-  if( fileDesc>0 )
+  if( exited==0 && fileDesc>0 )
     {
     /* try a final read before we give up on this file descriptor. */
     FD_ZERO( &readSet );
@@ -997,7 +1010,7 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
         Notice( "ReadLinesFromCommand(%s) (B) - post-loop read - %c", cmd, (int)(tinyBuf[0]) );
 #endif
         int c = tinyBuf[0];
-        if( c=='\n' )
+        if( c=='\n' || c=='\r' )
           {
           ++lineNo;
           if( lineNo >= nBufs )
@@ -1069,7 +1082,7 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
   fd_set exceptionSet;
   struct timeval timeout;
 
-  for(;;)
+  while( readFD>0 && exited==0 )
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
@@ -1094,6 +1107,8 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
         *ptr = 0;
         if( strchr( buf, '\n' )!=NULL )
           {
+          close( readFD );
+          readFD = -1;
           break;
           }
         }
@@ -1118,15 +1133,18 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
 
   /* potentially read some more due to race between child ending and
      previous read */
-  nBytes = read( readFD, ptr, endPtr-ptr );
-  if( nBytes>0 )
+  if( readFD>0 )
     {
-    ptr += nBytes;
-    *ptr = 0;
-    }
+    nBytes = read( readFD, ptr, endPtr-ptr );
+    if( nBytes>0 )
+      {
+      ptr += nBytes;
+      *ptr = 0;
+      }
 
-  close( readFD );
-  readFD = -1;
+    close( readFD );
+    readFD = -1;
+    }
 
   if( ! exited )
     {
@@ -1146,7 +1164,7 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
 
   int retVal = 0;
   time_t tStart = time(NULL);
-  while( *stdinLine != 0 )
+  while( fileDesc>0 && *stdinLine != 0 )
     {
     if( (int)(time(NULL) - tStart) >= maxtimeSeconds )
       {
