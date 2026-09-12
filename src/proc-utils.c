@@ -1,6 +1,6 @@
 #include "utils.h"
 
-/* #define DEBUG 1 */
+#define DEBUG 1
 
 int ProcessExistsAndIsMine( pid_t p )
   {
@@ -56,11 +56,13 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     err = prctl( PR_SET_PDEATHSIG, SIGHUP );
     if( err ) Warning( "POpenAndRead() - child - prctl error %d", err );
     close( readFD );
+    readFD = -1;
     err = dup2( writeFD, 1 );
     if( err!=1 ) Warning( "POpenAndRead() - child - dup2(A) error %d", err );
     err = dup2( writeFD, 2 );
     if( err!=2 ) Warning( "POpenAndRead() - child - dup2(B) error %d", err );
     close( writeFD );
+    writeFD = -1;
     /*
     Notice( "Calling execv() with cmd %s", args->argv[0] );
     for( int i=0; args->argv[i]!=NULL; ++i )
@@ -73,6 +75,7 @@ int POpenAndRead( const char *cmd, int* readPtr, pid_t* childPtr )
     {
     *childPtr = pid;
     close( writeFD );
+    writeFD = -1;
     *readPtr = readFD;
     fcntl( readFD, F_SETFL, O_NONBLOCK );
     }
@@ -101,6 +104,7 @@ int POpenAndSearch( const char *cmd, char* subString, char** result )
     if( strstr( buf, subString )!=NULL )
       {
       fclose( f );
+      f = NULL;
       if( result!=NULL )
         *result = strdup( buf );
       return 0;
@@ -108,6 +112,8 @@ int POpenAndSearch( const char *cmd, char* subString, char** result )
     }
 
   fclose( f );
+  f = NULL;
+
   return -2;
   }
 
@@ -132,6 +138,8 @@ int POpenAndSearchRegEx( const char *cmd, char* regex, char** result )
     if( StringMatchesRegex( regex, buf )==0 )
       {
       fclose( f );
+      f = NULL;
+
       if( result!=NULL )
         *result = strdup( buf );
       return 0;
@@ -139,6 +147,8 @@ int POpenAndSearchRegEx( const char *cmd, char* regex, char** result )
     }
 
   fclose( f );
+  f = NULL;
+
   return -2;
   }
 
@@ -197,6 +207,8 @@ int POpenAndSearchMultipleResults( const char *cmd, char* subString, char** resu
     *result = NULL;
 
   fclose( f );
+  f = NULL;
+
   sleep(1);
 
   int wstatus = -1;
@@ -254,12 +266,16 @@ int POpenAndReadWrite( const char* cmd, int* readFD, int* writeFD, pid_t* child 
     if( args==NULL )
       Error( "Failed to parse cmd line [%s]", cmd );
     close( inputWrite );
+    inputWrite = -1;
     close( outputRead );
+    outputRead = -1;
     dup2( inputRead, 0 );
     close( inputRead );
+    inputRead = -1;
     dup2( outputWrite, 1 );
     dup2( outputWrite, 2 );
     close( outputWrite );
+    outputWrite = -1;
     (void)execv( args->argv[0], args->argv );
     /* end of code */
     }
@@ -267,7 +283,9 @@ int POpenAndReadWrite( const char* cmd, int* readFD, int* writeFD, pid_t* child 
     {
     *child = pid;
     close( inputRead );
+    inputRead = -1;
     close( outputWrite );
+    outputWrite = -1;
     *readFD = outputRead;
     *writeFD = inputWrite;
     fcntl( outputRead, F_SETFL, O_NONBLOCK );
@@ -306,8 +324,10 @@ int POpenAndWrite( const char *cmd, int* writePtr, pid_t* childPtr )
     /* could be dup - in parent *and* child: */
     /* fflush( stdout ); */
     close( writeFD );
+    writeFD = -1;
     dup2( readFD, 0 );
     close( readFD );
+    readFD = -1;
     close( 2 );
     (void)execv( args->argv[0], args->argv );
     /* end of code */
@@ -316,6 +336,7 @@ int POpenAndWrite( const char *cmd, int* writePtr, pid_t* childPtr )
     {
     *childPtr = pid;
     close( readFD );
+    readFD = -1;
     *writePtr = writeFD;
     fcntl( writeFD, F_SETFL, O_NONBLOCK );
     }
@@ -404,7 +425,12 @@ int AsyncReadFromChildProcess( char* cmd,
       (*CallBetweenReads)();
     }
 
-  close( fileDesc );
+  if( fileDesc > 0 )
+    {
+    close( fileDesc );
+    fileDesc = -1;
+    }
+
   if( ! exited )
     {
     kill( child, SIGHUP );
@@ -520,40 +546,47 @@ int ReadLineFromCommand( char* cmd, char* buf, int bufSize, int timeoutSeconds, 
       break;
       }
     }
-  /* QQQ race condition?  printed something while we were checking for exit? */
 
-  /* try a final read before we give up on this file descriptor. */
-  FD_ZERO( &readSet );
-  FD_SET( fileDesc, &readSet );
-  FD_ZERO( &exceptionSet );
-  FD_SET( fileDesc, &exceptionSet );
-  timeout.tv_sec = timeoutSeconds;
-  timeout.tv_usec = 0;
-  
-  int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
-#ifdef DEBUG
-    Notice( "ReadLineFromCommand(%s) (B) - select() returned %d", cmd, result );
-#endif
-  if( result>0 )
+  if( fileDesc>0 )
     {
-    int nBytes = read( fileDesc, ptr, endPtr-ptr );
+    /* try a final read before we give up on this file descriptor. */
+    FD_ZERO( &readSet );
+    FD_SET( fileDesc, &readSet );
+    FD_ZERO( &exceptionSet );
+    FD_SET( fileDesc, &exceptionSet );
+    timeout.tv_sec = timeoutSeconds;
+    timeout.tv_usec = 0;
+    
+    int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
 #ifdef DEBUG
-    Notice( "ReadLineFromCommand(%s) (B) - read %d bytes", cmd, nBytes );
+      Notice( "ReadLineFromCommand(%s) (B) - select() returned %d", cmd, result );
 #endif
-    if( nBytes>0 )
+    if( result>0 )
       {
-      ptr += nBytes;
-      *ptr = 0;
-      if( strchr( buf, '\n' )!=NULL )
-        {
+      int nBytes = read( fileDesc, ptr, endPtr-ptr );
 #ifdef DEBUG
-        Notice( "ReadLineFromCommand(%s) (B) - read \\n - all done", cmd );
+      Notice( "ReadLineFromCommand(%s) (B) - read %d bytes", cmd, nBytes );
 #endif
+      if( nBytes>0 )
+        {
+        ptr += nBytes;
+        *ptr = 0;
+        if( strchr( buf, '\n' )!=NULL )
+          {
+#ifdef DEBUG
+          Notice( "ReadLineFromCommand(%s) (B) - read \\n - all done", cmd );
+#endif
+          }
         }
       }
     }
 
-  close( fileDesc );
+  if( fileDesc>0 )
+    {
+    close( fileDesc );
+    fileDesc = -1;
+    }
+
 #ifdef DEBUG
     Notice( "ReadLineFromCommand(%s) - exited read loop", cmd );
 #endif
@@ -927,45 +960,61 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
       }
     }
 
-  /* try a final read before we give up on this file descriptor. */
-  FD_ZERO( &readSet );
-  FD_SET( fileDesc, &readSet );
-  FD_ZERO( &exceptionSet );
-  FD_SET( fileDesc, &exceptionSet );
-  timeout.tv_sec = timeoutSeconds;
-  timeout.tv_usec = 0;
-
-  int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
 #ifdef DEBUG
-    Notice( "ReadLinesFromCommand(%s) (B) - select() returned %d", cmd, result );
+  Notice( "broke out of read loop.  fileDesc=%d", fileDesc );
 #endif
 
-  if( result > 0 )
+  if( fileDesc>0 )
     {
-    /* potentially, due to a race condition, child ended before we could read */
-    char tinyBuf[2];
-    tinyBuf[0] = 0;
-    int n = 0;
-    while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
+    /* try a final read before we give up on this file descriptor. */
+    FD_ZERO( &readSet );
+    FD_SET( fileDesc, &readSet );
+    FD_ZERO( &exceptionSet );
+    FD_SET( fileDesc, &exceptionSet );
+    timeout.tv_sec = timeoutSeconds;
+    timeout.tv_usec = 0;
+  
+#ifdef DEBUG
+      Notice( "ReadLinesFromCommand(%s) (B) - calling post-loop select()", cmd );
+#endif
+    int result = select( fileDesc+1, &readSet, NULL, &exceptionSet, &timeout );
+#ifdef DEBUG
+      Notice( "ReadLinesFromCommand(%s) (B) - select() returned %d", cmd, result );
+#endif
+  
+    if( result > 0 )
       {
-      int c = tinyBuf[0];
-      if( c=='\n' )
+#ifdef DEBUG
+      Notice( "ReadLinesFromCommand(%s) (B) - post-loop select() returned %d", cmd, result );
+#endif
+      /* potentially, due to a race condition, child ended before we could read */
+      char tinyBuf[2];
+      tinyBuf[0] = 0;
+      int n = 0;
+      while( ptr < endPtr && (n=read( fileDesc, tinyBuf, 1 ))==1 )
         {
-        ++lineNo;
-        if( lineNo >= nBufs )
+#ifdef DEBUG
+        Notice( "ReadLinesFromCommand(%s) (B) - post-loop read - %c", cmd, (int)(tinyBuf[0]) );
+#endif
+        int c = tinyBuf[0];
+        if( c=='\n' )
           {
-          close( fileDesc );
-          fileDesc = -1;
-          break;
+          ++lineNo;
+          if( lineNo >= nBufs )
+            {
+            close( fileDesc );
+            fileDesc = -1;
+            break;
+            }
+          ptr = bufs[lineNo];
+          endPtr = ptr + bufSize - 2;
           }
-        ptr = bufs[lineNo];
-        endPtr = ptr + bufSize - 2;
-        }
-      else
-        {
-        *ptr = c;
-        ++ptr;
-        *ptr = 0;
+        else
+          {
+          *ptr = c;
+          ++ptr;
+          *ptr = 0;
+          }
         }
       }
     }
@@ -973,12 +1022,17 @@ int ReadLinesFromCommand( char* cmd, char** bufs, int nBufs, int bufSize, int ti
   if( fileDesc>0 )
     {
     close( fileDesc );
+    fileDesc = -1;
     }
 
   if( exited==0 )
     {
     kill( child, SIGHUP );
     }
+
+#ifdef DEBUG
+  Notice( "ReadLinesFromCommand(%s) returning %d", cmd, retVal );
+#endif
 
   return retVal;
   }
@@ -1002,6 +1056,7 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
       Warning( "Tried to write %d bytes but only managed %d", l, nBytes );
     }
   close( writeFD );
+  writeFD = -1;
 
   char* ptr = buf;
   char* endPtr = buf + bufSize - 2;
@@ -1071,6 +1126,8 @@ int WriteReadLineToFromCommand( char* cmd, char* stdinLine, char* buf, int bufSi
     }
 
   close( readFD );
+  readFD = -1;
+
   if( ! exited )
     {
     kill( child, SIGHUP );
@@ -1126,7 +1183,11 @@ int WriteLineToCommand( char* cmd, char* stdinLine, int timeoutSeconds, int maxt
       }
     }
 
-  close( fileDesc );
+  if( fileDesc>0 )
+    {
+    close( fileDesc );
+    fileDesc = -1;
+    }
 
   int wStatus;
   if( waitpid( child, &wStatus, WNOHANG )==-1 )
@@ -1261,6 +1322,7 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
   nargv_free( args );
 
   close( readFD );
+  readFD = -1;
 
   int readStream = open( fileNameStdin, O_RDONLY );
   if( readStream<0 )
@@ -1285,8 +1347,11 @@ int SyncRunCommandSingleFileStdin( char* cmd, char* fileNameStdin )
       } while( nBytes>0 );
 
     close( readStream );
+    readStream = -1;
     }
+
   close( writeFD ); /* tell child we are done */
+  writeFD = -1;
 
   int retVal = 0;
   int wStatus;
@@ -1335,6 +1400,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
     close( 0 );
     dup2( readFD, 0 );
     close( writeFD );
+    writeFD = -1;
     close( 1 );
     close( 2 );
     (void)execv( args->argv[0], args->argv );
@@ -1344,6 +1410,7 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
   nargv_free( args );
 
   close( readFD );
+  readFD = -1;
 
   FILE* listF = fopen( listFileName, "r" );
   if( listF==NULL )
@@ -1381,12 +1448,16 @@ int SyncRunCommandManyFilesStdin( char* cmd, char* listFileName )
           } while( nBytes>0 );
 
         close( readStream );
+        readStream = -1;
         }
       }
 
     fclose( listF );
+    listF = NULL;
     }
+
   close( writeFD );
+  writeFD = -1;
 
   int retVal = 0;
   int wStatus;
@@ -1625,6 +1696,7 @@ void KillEarlierInstancesOfThisProcess( int argc, char** argv, int sigNo )
     }
 
   fclose( f );
+  f = NULL;
   }
 
 uid_t GetUID( const char* logName )
@@ -1715,6 +1787,7 @@ int SendEMail( char* recipient, char* subject, char* body )
     Warning( "Failed to write last \\n\\n to mail" );
 
   close( writeHandle );
+  writeHandle = -1;
 
   int retVal = 0;
   int wStatus;
