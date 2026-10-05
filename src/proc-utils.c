@@ -1877,3 +1877,118 @@ char* MakeDebugFilename( int argc, char** argv )
 
   return strdup( buf );
   }
+
+#define ENCODER "/usr/bin/qrencode -o -"
+
+/* cat /tmp/xx | qrencode -o - > /tmp/yy.png */
+int QREncode( char* buffer, unsigned char** output, int maxTimeSeconds )
+  {
+  if( EMPTY( buffer ) )
+    return -1;
+  if( output==NULL )
+    return -2;
+
+  int readFD = -1;
+  int writeFD = -1;
+  pid_t child = -1;
+
+  int err = POpenAndReadWrite( ENCODER, &readFD, &writeFD, &child );
+  if( err ) Error( "Cannot popen child to run [%s].", ENCODER );
+
+  int l = strlen( buffer );
+  int nBytes = write( writeFD, buffer, l );
+  if( nBytes>0 )
+    {
+    if( nBytes!=l )
+      Warning( "Tried to write %d bytes but only managed %d", l, nBytes );
+    }
+  close( writeFD );
+
+  char imageBuf[BIGBUF];
+
+  char* ptr = imageBuf;
+  char* endPtr = imageBuf + sizeof(imageBuf) - 3;
+
+  int retVal = 0;
+  time_t tStart = time(NULL);
+  int exited = 0;
+
+  fd_set readSet;
+  fd_set exceptionSet;
+  struct timeval timeout;
+
+  for(;;)
+    {
+    if( (int)(time(NULL) - tStart) >= maxTimeSeconds )
+      {
+      retVal = -3;
+      break;
+      }
+
+    FD_ZERO( &readSet );
+    FD_SET( readFD, &readSet );
+    FD_ZERO( &exceptionSet );
+    FD_SET( readFD, &exceptionSet );
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    
+    int result = select( readFD+1, &readSet, NULL, &exceptionSet, &timeout );
+    if( result>0 )
+      {
+      int nBytes = read( readFD, ptr, endPtr-ptr );
+      if( nBytes>0 )
+        {
+        ptr += nBytes;
+        *ptr = 0;
+        }
+      }
+
+    int wStatus;
+    if( waitpid( child, &wStatus, WNOHANG )==-1 )
+      {
+      retVal = -1;
+      break;
+      }
+
+    if( WIFEXITED( wStatus ) )
+      {
+      exited = 1;
+      retVal = 0;
+      break;
+      }
+    }
+
+  /* potentially read some more due to race between child ending and
+     previous read */
+  nBytes = read( readFD, ptr, endPtr-ptr );
+  if( nBytes>0 )
+    {
+    ptr += nBytes;
+    *ptr = 0;
+    }
+
+  close( readFD );
+  if( ! exited )
+    {
+    kill( child, SIGHUP );
+    }
+
+  if( ptr > imageBuf )
+    {
+    int len = ptr-imageBuf;
+    if( strstr( imageBuf, "buffer" )!=NULL )
+      Warning( "QR code generation crashed - [%s]", imageBuf );
+    else
+      Notice( "Generated QR code image - %d bytes", len );
+
+    *output = (unsigned char*)malloc( len + 5 );
+    if( *output==NULL )
+      Error( "Failed to allocate QR buffer" );
+    memcpy( *output, imageBuf, ptr-imageBuf );
+    (*output)[ len] = 0;
+    return len;
+    }
+
+  return retVal;
+  }
+

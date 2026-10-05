@@ -44,5 +44,6 @@ int DoWeHaveATTY();
 int SendEMail( char* recipient, char* subject, char* body );
 
 char* MakeDebugFilename( int argc, char** argv );
+int QREncode( char* buffer, unsigned char** output, int maxTimeSeconds );
 
 #endif
