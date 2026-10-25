@@ -53,9 +53,9 @@ int GetSocketFromHostAndPort( char* serverName, int portNum,
   return sockFD;
   }
 
-int TCPPortSendReceive( char* serverName, int portNum,
-                        char* httpPostText,
-                        char* responseBuffer, int responseBufLen )
+int TCPPortSendReceiveBinary( char* serverName, int portNum,
+                              unsigned char* sendText, int sendBytes,
+                              unsigned char* responseBuffer, int responseBufLen )
   {
   if( EMPTY( serverName ) )
     {
@@ -67,9 +67,9 @@ int TCPPortSendReceive( char* serverName, int portNum,
     Warning( "Cannot send command to invalid port number (%d)", portNum );
     return -2;
     }
-  if( EMPTY( httpPostText ) )
+  if( sendText==NULL || sendBytes<=0 )
     {
-    Warning( "Cannot send empty command to web service" );
+    Warning( "Cannot send empty command to socket" );
     return -3;
     }
 
@@ -85,17 +85,16 @@ int TCPPortSendReceive( char* serverName, int portNum,
     return sockFD;
     }
 
-  size_t l = strlen( httpPostText );
-  /* size_t debugL = l; */
+  size_t l = sendBytes;
   while( l>0 )
     {
-    size_t n = write( sockFD, httpPostText, l );
+    size_t n = write( sockFD, sendText, l );
     l -= n;
-    httpPostText += n;
+    sendText += n;
     }
   /* Notice( "Sent %d bytes to TCP port", (int)debugL ); */
 
-  char* ptr = responseBuffer;
+  unsigned char* ptr = responseBuffer;
   *ptr = 0;
   l = responseBufLen - 1;
   size_t n = 0;
@@ -152,7 +151,7 @@ int TCPPortSendReceive( char* serverName, int portNum,
   addr = NULL;
 
   /* Notice( "Returning" ); */
-  return 0;
+  return l;
   }
 
 int CountTextLines( char* rawResponse )
@@ -300,6 +299,108 @@ void ChopResponseIntoLines( char* buffer, char** lines, int n )
 #ifdef DEBUG
   Notice( "ChopResponseIntoLines - lineNo=%d, n=%d, last=%p", lineNo, n, lines[n-1] );
 #endif
+  }
+
+int TCPPortSendReceive( char* serverName, int portNum,
+                        char* httpPostText,
+                        char* responseBuffer, int responseBufLen )
+  {
+  if( EMPTY( serverName ) )
+    {
+    Warning( "Cannot send command to empty server" );
+    return -1;
+    }
+  if( portNum<1 || portNum>65535 )
+    {
+    Warning( "Cannot send command to invalid port number (%d)", portNum );
+    return -2;
+    }
+  if( EMPTY( httpPostText ) )
+    {
+    Warning( "Cannot send empty command to web service" );
+    return -3;
+    }
+
+  struct addrinfo* addr = NULL;
+  int sockFD = GetSocketFromHostAndPort( serverName, portNum, &addr );
+  if( sockFD<=0 )
+    {
+    if( addr!=NULL )
+      {
+      freeaddrinfo( addr );
+      addr = NULL;
+      }
+    return sockFD;
+    }
+
+  size_t l = strlen( httpPostText );
+  /* size_t debugL = l; */
+  while( l>0 )
+    {
+    size_t n = write( sockFD, httpPostText, l );
+    l -= n;
+    httpPostText += n;
+    }
+  /* Notice( "Sent %d bytes to TCP port", (int)debugL ); */
+
+  char* ptr = responseBuffer;
+  *ptr = 0;
+  l = responseBufLen - 1;
+  size_t n = 0;
+  for(;;)
+    {
+    /* Notice( "Select from socket on %s:%d", serverName, portNum ); */
+    fd_set readSet;
+    struct timeval timeout;
+    FD_ZERO( &readSet );
+    FD_SET( sockFD, &readSet );
+    timeout.tv_sec = 5; /* generous timeout of 5s */
+    timeout.tv_usec = 0;
+    int result = select( FD_SETSIZE, &readSet, NULL, NULL, &timeout );
+
+    /* Notice( "Select returned %d", result ); */
+    if( result>0 )
+      {
+      n = read( sockFD, ptr, l );
+      if( n>0 )
+        {
+        /* Notice( "Read %d bytes from TCP port", (int)debugL ); */
+        ptr += n;
+        *ptr = 0;
+        /* Notice( "Read so far: [%s]", responseBuffer ); */
+        l -= n;
+        }
+      else
+        {
+        /* Notice( "Read 0 bytes from %s:%d - closed?", serverName, portNum ); */
+        break;
+        }
+      }
+    else if( result==0 )
+      { /* timeout */
+      /* Notice( "Read from %s:%d timed out", serverName, portNum ); */
+      break;
+      }
+    else /* closed? */
+      {
+      break;
+      }
+    }
+
+  /* Notice( "Exited read loop" ); */
+
+  if( l>0 )
+    {
+    *ptr = 0;
+    }
+
+  shutdown( sockFD, SHUT_RDWR );
+  close( sockFD );
+  freeaddrinfo( addr );
+  addr = NULL;
+
+  /* Notice( "Returning" ); */
+  return 0;
   }
 
 int HTTPSendReceive( char* serverName, int portNum,

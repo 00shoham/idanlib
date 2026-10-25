@@ -46,6 +46,9 @@ int GetSocketFromHostAndPort( char* serverName, int portNum,
 int TCPPortSendReceive( char* serverName, int portNum,
                         char* httpPostText,
                         char* responseBuffer, int responseBufLen );
+int TCPPortSendReceiveBinary( char* serverName, int portNum,
+                              unsigned char* sendText, int sendBytes,
+                              unsigned char* responseBuffer, int responseBufLen );
 int CountTextLines( char* rawResponse );
 void ChopResponseIntoLines( char* buffer, char** lines, int n );
 int HTTPSendReceive( char* serverName, int portNum,
