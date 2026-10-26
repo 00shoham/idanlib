@@ -151,7 +151,7 @@ int TCPPortSendReceiveBinary( char* serverName, int portNum,
   addr = NULL;
 
   /* Notice( "Returning" ); */
-  return l;
+  return (int)n;
   }
 
 int CountTextLines( char* rawResponse )
