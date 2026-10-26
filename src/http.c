@@ -359,7 +359,7 @@ int TCPPortSendReceive( char* serverName, int portNum,
     FD_SET( sockFD, &readSet );
     timeout.tv_sec = 5; /* generous timeout of 5s */
     timeout.tv_usec = 0;
-    int result = select( FD_SETSIZE, &readSet, NULL, NULL, &timeout );
+    int result = select( sockFD+1, &readSet, NULL, NULL, &timeout );
 
     /* Notice( "Select returned %d", result ); */
     if( result>0 )
