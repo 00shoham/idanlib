@@ -86,13 +86,15 @@ int TCPPortSendReceiveBinary( char* serverName, int portNum,
     }
 
   size_t l = sendBytes;
+  int nSent = 0;
   while( l>0 )
     {
     size_t n = write( sockFD, sendText, l );
     l -= n;
     sendText += n;
+    nSent += n;
     }
-  /* Notice( "Sent %d bytes to TCP port", (int)debugL ); */
+  /* Notice( "Sent %d bytes to TCP port", (int)nSent ); */
 
   unsigned char* ptr = responseBuffer;
   *ptr = 0;
@@ -107,7 +109,7 @@ int TCPPortSendReceiveBinary( char* serverName, int portNum,
     FD_SET( sockFD, &readSet );
     timeout.tv_sec = 5; /* generous timeout of 5s */
     timeout.tv_usec = 0;
-    int result = select( FD_SETSIZE, &readSet, NULL, NULL, &timeout );
+    int result = select( sockFD+1, &readSet, NULL, NULL, &timeout );
 
     /* Notice( "Select returned %d", result ); */
     if( result>0 )
@@ -115,7 +117,7 @@ int TCPPortSendReceiveBinary( char* serverName, int portNum,
       n = read( sockFD, ptr, l );
       if( n>0 )
         {
-        /* Notice( "Read %d bytes from TCP port", (int)debugL ); */
+        /* Notice( "Read %d bytes from TCP port", (int)n ); */
         ptr += n;
         *ptr = 0;
         /* Notice( "Read so far: [%s]", responseBuffer ); */
@@ -150,7 +152,8 @@ int TCPPortSendReceiveBinary( char* serverName, int portNum,
   freeaddrinfo( addr );
   addr = NULL;
 
-  /* Notice( "Returning" ); */
+  n = ptr - responseBuffer;
+  /* Notice( "Returning %d", (int)n ); */
   return (int)n;
   }
 
